@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ລະບົບຈັດເກັບອຸປະກອນ ແລະ ສະຕ໋ອກ (Cloud Sync)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Lao (Noto Sans Lao) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans Lao', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header / Navigation -->
+    <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-white text-blue-600 p-2 rounded-lg shadow-inner">
+                        <i class="fa-solid fa-boxes-stacked text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold leading-none">ລະບົບຈັດເກັບອຸປະກອນ</h1>
+                        <span class="text-xs text-blue-200">ຄຸ້ມຄອງສາງເຄື່ອງ ແລະ ສະຕ໋ອກ (Cloud Sync)</span>
+                    </div>
+                </div>
+                <div class="hidden md:flex space-x-1" id="nav-links">
+                    <!-- Navigation links dynamic activation -->
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-btn" class="text-white hover:text-blue-200 focus:outline-none">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-blue-700 px-4 pt-2 pb-4 space-y-1 shadow-inner">
+            <!-- Dynamic Mobile Links -->
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Cloud Connection Status Banner -->
+        <div id="cloud-status-banner" class="mb-6 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between text-amber-800 text-sm">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-cloud-arrow-up text-amber-500 animate-pulse text-base"></i>
+                <span id="cloud-status-text">ໂໝດທ້ອງຖິ່ນ (Offline): ຂໍ້ມູນຖືກບັນທຶກໄວ້ໃນບຣາວເຊີນີ້ເທົ່ານັ້ນ. ກະລຸນາເຊື່ອມຕໍ່ Google Sheet ເພື່ອຊິງຄ໌ຂໍ້ມູນຂ້າມເຄື່ອງ.</span>
+            </div>
+            <button onclick="switchTab('sync')" class="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-semibold transition">
+                <i class="fa-solid fa-link mr-1"></i> ຕັ້ງຄ່າການເຊື່ອມຕໍ່
+            </button>
+        </div>
+
+        <!-- Alerts & Notifications Box -->
+        <div id="alert-box" class="hidden mb-6 p-4 rounded-lg shadow-sm border flex items-start space-x-3 transition-all duration-300">
+            <div id="alert-icon" class="text-xl"></div>
+            <div class="flex-grow">
+                <h4 id="alert-title" class="font-bold"></h4>
+                <p id="alert-message" class="text-sm mt-1"></p>
+            </div>
+            <button onclick="closeAlert()" class="text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Dynamic Content Sections -->
+        
+        <!-- 1. DASHBOARD SECTION -->
+        <div id="section-dashboard" class="space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Card 1: Total Items -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <span class="text-sm text-slate-500 font-medium">ລາຍການອຸປະກອນທັງໝົດ</span>
+                        <h3 class="text-3xl font-bold text-slate-800 mt-1" id="dash-total-items">0</h3>
+                    </div>
+                    <div class="bg-blue-50 text-blue-600 p-4 rounded-xl">
+                        <i class="fa-solid fa-list-ol text-2xl"></i>
+                    </div>
+                </div>
+                <!-- Card 2: Total Stock -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <span class="text-sm text-slate-500 font-medium">ຈຳນວນເຄື່ອງໃນສາງ</span>
+                        <h3 class="text-3xl font-bold text-green-600 mt-1" id="dash-total-stock">0</h3>
+                    </div>
+                    <div class="bg-green-50 text-green-600 p-4 rounded-xl">
+                        <i class="fa-solid fa-warehouse text-2xl"></i>
+                    </div>
+                </div>
+                <!-- Card 3: Total Transactions Today -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <span class="text-sm text-slate-500 font-medium">ລາຍການເຄື່ອນໄຫວມື້ນີ້</span>
+                        <h3 class="text-3xl font-bold text-amber-500 mt-1" id="dash-today-tx">0</h3>
+                    </div>
+                    <div class="bg-amber-50 text-amber-500 p-4 rounded-xl">
+                        <i class="fa-solid fa-clock-rotate-left text-2xl"></i>
+                    </div>
+                </div>
+                <!-- Card 4: Low Stock Items -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <span class="text-sm text-slate-500 font-medium">ເຄື່ອງທີ່ໃກ້ຈະໝົດ (ຕໍ່າກວ່າຈຸດເຕືອນ)</span>
+                        <h3 class="text-3xl font-bold text-red-500 mt-1" id="dash-low-stock">0</h3>
+                    </div>
+                    <div class="bg-red-50 text-red-500 p-4 rounded-xl">
+                        <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions & Recent Activities -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Quick Actions -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2"><i class="fa-solid fa-bolt text-amber-500 mr-2"></i> ເມນູດ່ວນ</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="switchTab('stockin')" class="flex flex-col items-center justify-center p-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl transition duration-200">
+                            <i class="fa-solid fa-circle-plus text-2xl mb-2"></i>
+                            <span class="text-sm font-medium">ນຳເຂົ້າເຄື່ອງ</span>
+                        </button>
+                        <button onclick="switchTab('stockout')" class="flex flex-col items-center justify-center p-4 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl transition duration-200">
+                            <i class="fa-solid fa-circle-minus text-2xl mb-2"></i>
+                            <span class="text-sm font-medium">ເບີກເຄື່ອງອອກ</span>
+                        </button>
+                        <button onclick="switchTab('audit')" class="flex flex-col items-center justify-center p-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition duration-200">
+                            <i class="fa-solid fa-clipboard-check text-2xl mb-2"></i>
+                            <span class="text-sm font-medium">ກວດສະຕ໋ອກ</span>
+                        </button>
+                        <button onclick="switchTab('codes')" class="flex flex-col items-center justify-center p-4 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-xl transition duration-200">
+                            <i class="fa-solid fa-barcode text-2xl mb-2"></i>
+                            <span class="text-sm font-medium">ລະຫັດເຄື່ອງ</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent History -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-history text-blue-500 mr-2"></i> ປະຫວັດການເຄື່ອນໄຫວຫຼ້າສຸດ</h3>
+                        <span class="text-xs text-slate-500">ສະແດງ 5 ລາຍການຫຼ້າສຸດ</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="text-slate-500 border-b border-slate-100">
+                                    <th class="pb-2">ວັນທີ-ເວລາ</th>
+                                    <th class="pb-2">ປະເພດ</th>
+                                    <th class="pb-2">ລາຍການອຸປະກອນ</th>
+                                    <th class="pb-2 text-right">ຈຳນວນ</th>
+                                    <th class="pb-2 pl-4">ໝາຍເຫດ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-history-list" class="divide-y divide-slate-50">
+                                <!-- Dynamic list -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. STOCK BALANCE SECTION (ສະຕ໋ອກເຄື່ອງ) -->
+        <div id="section-stock" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">ລາຍການສະຕ໋ອກເຄື່ອງຄົງເຫຼືອ</h2>
+                        <p class="text-slate-500 text-sm">ກວດສອບ ແລະ ຕິດຕາມຈຳນວນຄົງເຫຼືອທັງໝົດໃນສາງ</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 items-center">
+                        <div class="relative w-full sm:w-auto">
+                            <input type="text" id="search-stock" oninput="filterStock()" placeholder="ຄົ້ນຫາອຸປະກອນ..." class="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                        </div>
+                        <select id="filter-stock-category" onchange="filterStock()" class="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">ທຸກໝວດໝູ່</option>
+                        </select>
+                        <button onclick="downloadStockExcel()" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition duration-150 shadow-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-file-excel"></i> ດາວໂຫຼດ Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-100 rounded-xl">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100 text-slate-600 text-sm font-semibold">
+                                <th class="p-4">ລະຫັດ</th>
+                                <th class="p-4">ຊື່ອຸປະກອນ</th>
+                                <th class="p-4">ໝວດໝູ່</th>
+                                <th class="p-4 text-center">ນຳເຂົ້າສະສົມ</th>
+                                <th class="p-4 text-center">ເບີກສະສົມ</th>
+                                <th class="p-4 text-center">ຄົງເຫຼືອໃນສາງ</th>
+                                <th class="p-4 text-center">ສະຖານະ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stock-table-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- Dynamic Stock Data -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. STOCK IN SECTION (ນຳເຂົ້າເຄື່ອງ) -->
+        <div id="section-stockin" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Stock In Form -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1">
+                    <h2 class="text-xl font-bold text-slate-800 mb-2">ຟອມນຳເຂົ້າອຸປະກອນ</h2>
+                    <p class="text-slate-500 text-sm mb-6">ເພີ່ມຈຳນວນອຸປະກອນເຂົ້າໃນສາງສະຕ໋ອກ</p>
+                    
+                    <form id="form-stock-in" onsubmit="handleStockIn(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ຄົ້ນຫາ ແລະ ເລືອກໝວດໝູ່</label>
+                            <div class="relative mb-1">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs"></i>
+                                </span>
+                                <input type="text" id="in-category-search" oninput="filterCategoryDropdown('in-category-search', 'in-category', 'in-item')" placeholder="ພິມເພື່ອຄົ້ນຫາໝວດໝູ່..." class="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+                            </div>
+                            <select id="in-category" onchange="populateItemDropdown('in-category', 'in-item')" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
+                                <option value="">-- ກະລຸນາເລືອກໝວດໝູ່ --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ເລືອກອຸປະກອນ</label>
+                            <select id="in-item" onchange="updateInItemCode()" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required disabled>
+                                <option value="">-- ກະລຸນາເລືອກອຸປະກອນ --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ລະຫັດອຸປະກອນ</label>
+                            <input type="text" id="in-code" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 text-sm focus:outline-none" placeholder="ລະຫັດຈະສະແດງອັດຕະໂນມັດ">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ຈຳນວນທີ່ນຳເຂົ້າ</label>
+                            <input type="number" id="in-qty" min="1" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required placeholder="ຕົວຢ່າງ: 10">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ໝາຍເຫດ</label>
+                            <textarea id="in-note" rows="2" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="ລາຍລະອຽດເພີ່ມເຕີມ..."></textarea>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition duration-150 shadow-sm">
+                            <i class="fa-solid fa-circle-plus mr-2"></i> ຢືນຢັນການນຳເຂົ້າ
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Stock In History -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">ປະຫວັດການນຳເຂົ້າ</h2>
+                            <p class="text-slate-500 text-sm">ລາຍການນຳເຂົ້າອຸປະກອນທັງໝົດ</p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto max-h-[500px] overflow-y-auto border border-slate-100 rounded-xl">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-100 text-slate-600 text-sm font-semibold sticky top-0">
+                                    <th class="p-4">ວັນທີ-ເວລາ</th>
+                                    <th class="p-4">ລະຫັດ</th>
+                                    <th class="p-4">ຊື່ອຸປະກອນ</th>
+                                    <th class="p-4 text-center">ຈຳນວນ</th>
+                                    <th class="p-4">ໝາຍເຫດ</th>
+                                    <th class="p-4 text-center">ຈັດການ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="in-history-table" class="divide-y divide-slate-100 text-sm">
+                                <!-- Dynamic In History -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. STOCK OUT SECTION (ເບີກເຄື່ອງ) -->
+        <div id="section-stockout" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Stock Out Form -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1">
+                    <h2 class="text-xl font-bold text-slate-800 mb-2">ຟອມເບີກອຸປະກອນ</h2>
+                    <p class="text-slate-500 text-sm mb-6">ເບີກອຸປະກອນອອກຈາກສາງເພື່ອໄປໃຊ້ງານ</p>
+                    
+                    <form id="form-stock-out" onsubmit="handleStockOut(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ຄົ້ນຫາ ແລະ ເລືອກໝວດໝູ່</label>
+                            <div class="relative mb-1">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs"></i>
+                                </span>
+                                <input type="text" id="out-category-search" oninput="filterCategoryDropdown('out-category-search', 'out-category', 'out-item')" placeholder="ພິມເພື່ອຄົ້ນຫາໝວດໝູ່..." class="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+                            </div>
+                            <select id="out-category" onchange="populateItemDropdown('out-category', 'out-item')" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
+                                <option value="">-- ກະລຸນາເລືອກໝວດໝູ່ --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ເລືອກອຸປະກອນ</label>
+                            <select id="out-item" onchange="updateOutItemDetails()" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required disabled>
+                                <option value="">-- ກະລຸນາເລືອກອຸປະກອນ --</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">ລະຫັດອຸປະກອນ</label>
+                                <input type="text" id="out-code" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 text-sm focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">ຄົງເຫຼືອໃນສາງ</label>
+                                <input type="text" id="out-available" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl font-bold text-sm focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ຈຳນວນທີ່ຕ້ອງການເບີກ</label>
+                            <input type="number" id="out-qty" min="1" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required placeholder="ຕົວຢ່າງ: 5">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ໝາຍເຫດ / ຈຸດປະສົງ</label>
+                            <textarea id="out-note" rows="2" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="ເບີກໄປໃຊ້ງານຫຍັງ..."></textarea>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium transition duration-150 shadow-sm">
+                            <i class="fa-solid fa-circle-minus mr-2"></i> ຢືນຢັນການເບີກເຄື່ອງ
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Stock Out History -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">ປະຫວັດການເບີກເຄື່ອງ</h2>
+                            <p class="text-slate-500 text-sm">ລາຍການເບີກອຸປະກອນອອກຈາກສາງທັງໝົດ</p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto max-h-[500px] overflow-y-auto border border-slate-100 rounded-xl">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-100 text-slate-600 text-sm font-semibold sticky top-0">
+                                    <th class="p-4">ວັນທີ-ເວລາ</th>
+                                    <th class="p-4">ລະຫັດ</th>
+                                    <th class="p-4">ຊື່ອຸປະກອນ</th>
+                                    <th class="p-4 text-center">ຈຳນວນ</th>
+                                    <th class="p-4">ໝາຍເຫດ / ຈຸດປະສົງ</th>
+                                    <th class="p-4 text-center">ຈັດການ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="out-history-table" class="divide-y divide-slate-100 text-sm">
+                                <!-- Dynamic Out History -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. STOCK AUDIT SECTION (ກວດສະຕ໋ອກ) -->
+        <div id="section-audit" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Audit Action Form -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1">
+                    <h2 class="text-xl font-bold text-slate-800 mb-2">ຟອມປັບປຸງສະຕ໋ອກ (Audit)</h2>
+                    <p class="text-slate-500 text-sm mb-6">ປັບປຸງຈຳນວນສິນຄ້າຄົງເຫຼືອໃຫ້ກົງກັບຈຳນວນຕົວຈິງໃນສາງ</p>
+                    
+                    <form id="form-stock-audit" onsubmit="handleStockAudit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ເລືອກໝວດໝູ່</label>
+                            <select id="audit-category" onchange="populateItemDropdown('audit-category', 'audit-item')" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
+                                <option value="">-- ກະລຸນາເລືອກໝວດໝູ່ --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ເລືອກອຸປະກອນ</label>
+                            <select id="audit-item" onchange="updateAuditItemDetails()" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required disabled>
+                                <option value="">-- ກະລຸນາເລືອກອຸປະກອນ --</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">ລະຫັດອຸປະກອນ</label>
+                                <input type="text" id="audit-code" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 text-sm focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">ຈຳນວນໃນລະບົບ</label>
+                                <input type="text" id="audit-system-qty" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl font-bold text-sm focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ຈຳນວນຕົວຈິງທີ່ນັບໄດ້</label>
+                            <input type="number" id="audit-actual-qty" min="0" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required placeholder="ຈຳນວນຕົວຈິງໃນສາງ">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ຜູ້ກວດສອບ / ຜູ້ປັບປຸງ</label>
+                            <input type="text" id="audit-user" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required placeholder="ຊື່ຜູ້ກວດສອບ">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ເຫດຜົນການປັບປຸງ</label>
+                            <textarea id="audit-note" rows="2" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required placeholder="ຕົວຢ່າງ: ເຄື່ອງເສຍຫາຍ, ນັບພົບເພີ່ມ, ..."></textarea>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition duration-150 shadow-sm">
+                            <i class="fa-solid fa-clipboard-check mr-2"></i> ຢືນຢັນການປັບປຸງສະຕ໋ອກ
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Audit History -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">ປະຫວັດການກວດສອບ ແລະ ປັບປຸງ</h2>
+                            <p class="text-slate-500 text-sm">ລາຍການປັບປຸງສະຕ໋ອກທັງໝົດ</p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto max-h-[500px] overflow-y-auto border border-slate-100 rounded-xl">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-100 text-slate-600 text-sm font-semibold sticky top-0">
+                                    <th class="p-4">ວັນທີ-ເວລາ</th>
+                                    <th class="p-4">ລະຫັດ</th>
+                                    <th class="p-4">ຊື່ອຸປະກອນ</th>
+                                    <th class="p-4 text-center">ຄ່າເດີມ</th>
+                                    <th class="p-4 text-center">ຄ່າໃໝ່</th>
+                                    <th class="p-4 text-center">ຜົນຕ່າງ</th>
+                                    <th class="p-4">ຜູ້ກວດສອບ</th>
+                                    <th class="p-4">ເຫດຜົນ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-history-table" class="divide-y divide-slate-100 text-sm">
+                                <!-- Dynamic Audit History -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. EQUIPMENT CODES SECTION (ລະຫັດເຄື່ອງ) -->
+        <div id="section-codes" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">ຖານຂໍ້ມູນລະຫັດອຸປະກອນ</h2>
+                        <p class="text-slate-500 text-sm">ລາຍຊື່ອຸປະກອນ ແລະ ລະຫັດອ້າງອີງທັງໝົດໃນລະບົບ</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="openAddDeviceModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition duration-150 shadow-sm">
+                            <i class="fa-solid fa-plus mr-1"></i> ເພີ່ມອຸປະກອນໃໝ່
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <!-- Left Column: Category Tree -->
+                    <div class="md:col-span-1 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <h3 class="font-bold text-slate-700 mb-3 text-sm">ແຍກຕາມໝວດໝູ່</h3>
+                        <ul class="space-y-1" id="category-tree-list">
+                            <!-- Dynamic Categories -->
+                        </ul>
+                    </div>
+
+                    <!-- Right Column: Device Table with Code Search -->
+                    <div class="md:col-span-3 space-y-4">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="relative flex-grow">
+                                <input type="text" id="search-code-list" oninput="filterCodes()" placeholder="ຄົ້ນຫາດ້ວຍ ຊື່ ຫຼື ລະຫັດອຸປະກອນ..." class="pl-10 pr-4 py-2 w-full bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <i class="fa-solid fa-barcode absolute left-3 top-3 text-slate-400 text-sm"></i>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto border border-slate-100 rounded-xl">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-100 text-slate-600 text-sm font-semibold">
+                                        <th class="p-3">ລະຫັດອຸປະກອນ</th>
+                                        <th class="p-3">ຊື່ອຸປະກອນ</th>
+                                        <th class="p-3">ໝວດໝູ່</th>
+                                        <th class="p-3 text-center">ຈຸດເຕືອນສະຕ໋ອກຕໍ່າ</th>
+                                        <th class="p-3 text-center">ຈັດການ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="codes-table-body" class="divide-y divide-slate-100 text-sm">
+                                    <!-- Dynamic Device Codes -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. CLOUD SYNC SETTINGS SECTION (ຕັ້ງຄ່າການເຊື່ອມຕໍ່) -->
+        <div id="section-sync" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-3xl mx-auto">
+                <div class="border-b pb-4 mb-6">
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-cloud text-blue-500"></i> ຕັ້ງຄ່າການເຊື່ອມຕໍ່ Google Sheet (Cloud Database)
+                    </h2>
+                    <p class="text-slate-500 text-sm mt-1">ຊິງຄ໌ຂໍ້ມູນອຸປະກອນ ແລະ ປະຫວັດທັງໝົດໄປຫາ Google Sheet ເພື່ອເປີດໃຊ້ງານໄດ້ຈາກທຸກເຄື່ອງ ແລະ ບຣາວເຊີອື່ນໆ</p>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Integration Form -->
+                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-3">
+                        <h3 class="font-bold text-blue-900 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info"></i> ຂັ້ນຕອນການເຊື່ອມຕໍ່ Google Sheet:
+                        </h3>
+                        <ol class="list-decimal list-inside text-xs text-blue-800 space-y-2 pl-1">
+                            <li>ສ້າງ <b>Google Sheet</b> ໃໝ່ຂຶ້ນມາໃນ Google Drive ຂອງທ່ານ.</li>
+                            <li>ໄປທີ່ <b>Extensions (ສ່ວນຂະຫຍາຍ)</b> &gt; <b>Apps Script</b>.</li>
+                            <li>ກັອບປີ້ຊຸດໂຄດ Google Apps Script ທີ່ຢູ່ດ້ານລຸ່ມນີ້ໄປວາງໃສ່.</li>
+                            <li>ກົດ <b>Deploy (ໃຊ້ງານເວັບໄຊ)</b> &gt; <b>New deployment</b>. ເລືອກປະເພດເປັນ <b>Web app</b>.</li>
+                            <li>ກຳນົດ <i>Who has access</i> ເປັນ <b>Anyone</b>, ກົດ Deploy ແລ້ວກັອບປີ້ <b>Web App URL</b> ມາໃສ່ຊ່ອງລຸ່ມນີ້.</li>
+                        </ol>
+                    </div>
+
+                    <form id="form-cloud-sync" onsubmit="saveCloudSettings(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Google Web App URL (API Link)</label>
+                            <input type="url" id="cloud-api-url" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="https://script.google.com/macros/s/.../exec" required>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2 border-t">
+                            <div class="flex items-center space-x-2">
+                                <span id="sync-indicator" class="h-3 w-3 rounded-full bg-slate-300"></span>
+                                <span id="sync-status-label" class="text-xs text-slate-500">Offline (ຍັງບໍ່ມີການເຊື່ອມຕໍ່)</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button type="button" onclick="testAndSyncCloud()" id="btn-sync-now" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition flex items-center gap-1">
+                                    <i class="fa-solid fa-rotate"></i> ຊິງຄ໌ຂໍ້ມູນທັນທີ
+                                </button>
+                                <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk mr-1"></i> ບັນທຶກ URL ຕັ້ງຄ່າ
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Code block for user to copy -->
+                    <div class="mt-6 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-xs font-bold text-slate-500 uppercase">ຊຸດໂຄດ Apps Script ສໍາລັບ Google Sheet (ກັອບປີ້ໄປວາງ)</label>
+                            <button onclick="copyAppsScriptCode()" class="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-copy"></i> ກັອບປີ້ໂຄດ
+                            </button>
+                        </div>
+                        <textarea id="apps-script-code-block" readonly class="w-full h-48 p-3 bg-slate-800 text-slate-200 font-mono text-xs rounded-xl focus:outline-none" style="white-space: pre;"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400 py-6 border-t border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm space-y-2">
+            <p>© 2026 ລະບົບຈັດເກັບອຸປະກອນ ແລະ ສະຕ໋ອກ - ສະຫງວນລິຂະສິດ</p>
+            <p class="text-xs text-slate-500">ພັດທະນາຂຶ້ນເພື່ອອຳນວຍຄວາມສະດວກໃນການຄຸ້ມຄອງສາງອຸປະກອນຕ່າງໆ</p>
+        </div>
+    </footer>
+
+    <!-- ADD/EDIT DEVICE MODAL -->
+    <div id="device-modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900 bg-opacity-50">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative">
+            <button onclick="closeDeviceModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-4">ເພີ່ມອຸປະກອນໃໝ່</h3>
+            
+            <form id="form-device" onsubmit="saveDevice(event)" class="space-y-4">
+                <input type="hidden" id="edit-device-id">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ໝວດໝູ່</label>
+                    <div class="flex gap-2">
+                        <select id="modal-category" class="flex-grow px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
+                            <!-- Dynamic loading -->
+                        </select>
+                        <button type="button" onclick="promptNewCategory()" class="px-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-slate-600 text-xs font-semibold" title="ສ້າງໝວດໝູ່ໃໝ່">
+                            <i class="fa-solid fa-plus"></i> ໃໝ່
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ຊື່ອຸປະກອນ / ຂະໜາດ / ສີ</label>
+                    <input type="text" id="modal-item-name" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required placeholder="ຕົວຢ່າງ: ສີແດງ ຫຼື 914">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ກຳນົດລະຫັດເອງ (ທາງເລືອກ)</label>
+                    <input type="text" id="modal-item-code" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="ລະບົບຈະສ້າງໃຫ້ອັດຕະໂນມັດຖ້າວ່າງໄວ້">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ຈຸດເຕືອນສະຕ໋ອກຕໍ່າ (ຊິ້ນ)</label>
+                    <input type="number" id="modal-item-min-qty" min="0" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="ຄ່າເລີ່ມຕົ້ນແມ່ນ 5">
+                </div>
+                <div class="flex justify-end space-x-2 pt-4">
+                    <button type="button" onclick="closeDeviceModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition duration-150">ຍົກເລີກ</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition duration-150 shadow-sm">ບັນທຶກ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONFIRMATION MODAL -->
+    <div id="confirm-modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900 bg-opacity-50">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-rose-100 text-rose-600 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+            </div>
+            <h3 id="confirm-modal-title" class="text-lg font-bold text-slate-800 mb-2">ຢືນຢັນການດຳເນີນການ</h3>
+            <p id="confirm-modal-message" class="text-slate-500 text-sm mb-6"></p>
+            <div class="flex justify-center space-x-3">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition duration-150">ຍົກເລີກ</button>
+                <button onclick="handleConfirmAction()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-medium transition duration-150 shadow-sm">ຢືນຢັນການລຶບ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TRANSACTION EDIT MODAL -->
+    <div id="tx-edit-modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900 bg-opacity-50">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative">
+            <button onclick="closeEditTxModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 id="edit-tx-title" class="text-lg font-bold text-slate-800 mb-4">ແກ້ໄຂລາຍການ</h3>
+            
+            <form id="form-tx-edit" onsubmit="saveTransactionEdit(event)" class="space-y-4">
+                <input type="hidden" id="edit-tx-id">
+                <input type="hidden" id="edit-tx-type">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ອຸປະກອນ</label>
+                    <input type="text" id="edit-tx-item-name" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 text-sm focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ຈຳນວນ</label>
+                    <input type="number" id="edit-tx-qty" min="1" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ໝາຍເຫດ</label>
+                    <textarea id="edit-tx-note" rows="3" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="ເຫດຜົນ ຫຼື ລາຍລະອຽດເພີ່ມເຕີມ..." required></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-4">
+                    <button type="button" onclick="closeEditTxModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition duration-150">ຍົກເລີກ</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition duration-150 shadow-sm">ບັນທຶກການແກ້ໄຂ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- INITIALIZATION & BUSINESS LOGIC JAVASCRIPT -->
+    <script>
+        // --- 1. SYSTEM DATA STRUCTURES ---
+        
+        const tabs = [
+            { id: 'dashboard', name: 'ໜ້າຫຼັກ', icon: 'fa-chart-pie' },
+            { id: 'stock', name: 'ສະຕ໋ອກເຄື່ອງ', icon: 'fa-boxes-stacked' },
+            { id: 'stockin', name: 'ນຳເຂົ້າເຄື່ອງ', icon: 'fa-circle-plus' },
+            { id: 'stockout', name: 'ເບີກເຄື່ອງ', icon: 'fa-circle-minus' },
+            { id: 'audit', name: 'ກວດສະຕ໋ອກ', icon: 'fa-clipboard-check' },
+            { id: 'codes', name: 'ລະຫັດເຄື່ອງ', icon: 'fa-barcode' },
+            { id: 'sync', name: 'ຕັ້ງຄ່າ Cloud', icon: 'fa-cloud' }
+        ];
+
+        // Raw Initial Data 
+        const initialRawData = {
+            "ສະຕີກເກີໜ້າ": ["914", "107", "127", "137", "152"],
+            "ສະຕີກເກີບາງ": ["914", "107", "127", "137", "152"],
+            "ຟິມເຄືອບສະຕີກເກີ": ["914", "107", "127", "137", "152"],
+            "ເຈ້ຍຮູບ": ["914", "107", "127", "137", "152"],
+            "ສະຕີກເກີສີທູ": ["0.914 cm", "1.07 cm", "1.27 cm", "1.37 cm", "1.52 cm"],
+            "ສະຕີກເກີສະທ້ອນແສງ": ["1.07 cm", "1.27 cm", "1.37 cm", "1.52 cm"],
+            "ສະຕີກເກີສະທ້ອນແສງແບບສີ": ["ສີແດງ", "ສີຟ້າ", "ສີສີເຫຼືອງ", "ສີດໍາ", "ສີເທົາ", "ສີແດງ - ສີເທົາ", "ສີຂຽວ"],
+            "ຂອບໂລໂກໄຟ": ["ສີດໍາ", "ສີຂາວ", "ສີເຫຼືອງ", "ສີແດງ"],
+            "ສະຕີກເກີສຳລັບຕັດ": ["ສີແດງ", "ສີເຫຼືອງ", "ສີສົ້ມ", "ສີທອງ", "ສີຟ້າອ່ອນ", "ສີຟ້າ", "ສີດໍາ", "ສີຂຽວ"],
+            "ສີພີມຈັກໃຫຍ່": ["ສີແດງ", "ສີເຫຼືອງ", "ສີນ້ຳເງິນ", "ສີດຳ"],
+            "ສີພີມຈັກນ້ອຍ": ["ສີແດງ", "ສີເຫຼືອງ", "ສີນ້ຳເງິນ", "ສີດຳ"],
+            "ຜ້າບາງ": ["ຜ້າບາງ 76", "ຜ້າບາງ 914", "ຜ້າບາງ 107", "ຜ້າບາງ 127"],
+            "ຜ້າໄວນິວ": ["ຜ້າໄວນິວ 100", "ຜ້າໄວນິວ 110", "ຜ້າໄວນິວ 120", "ຜ້າໄວນິວ 130", "ຜ້າໄວນິວ 140", "ຜ້າໄວນິວ 150", "ຜ້າໄວນິວ 160", "ຜ້າໄວນິວ 170", "ຜ້າໄວນິວ 180", "ຜ້າໄວນິວ 190", "ຜ້າໄວນິວ 200", "ຜ້າໄວນິວ 210", "ຜ້າໄວນິວ 220", "ຜ້າໄວນິວ 230", "ຜ້າໄວນິວ 240", "ຜ້າໄວນິວ 250", "ຜ້າໄວນິວ 260", "ຜ້າໄວນິວ 270", "ຜ້າໄວນິວ 280", "ຜ້າໄວນິວ 290", "ຜ້າໄວນິວ 300", "ຜ້າໄວນິວ 310", "ຜ້າໄວນິວ 320"],
+            "ຜ້າໄວນິວຫຼັງດໍາ": ["ຜ້າໄວນິວ 100", "ຜ້າໄວນິວ 110", "ຜ້າໄວນິວ 120", "ຜ້າໄວນິວ 130", "ຜ້າໄວນິວ 140", "ຜ້າໄວນິວ 150", "ຜ້າໄວນິວ 160", "ຜ້າໄວນິວ 170", "ຜ້າໄວນິວ 180", "ຜ້າໄວນິວ 190", "ຜ້າໄວນິວ 200", "ຜ້າໄວນິວ 210", "ຜ້າໄວນິວ 220", "ຜ້າໄວນິວ 230", "ຜ້າໄວນິວ 240", "ຜ້າໄວນິວ 250", "ຜ້າໄວນິວ 260", "ຜ້າໄວນິວ 270", "ຜ້າໄວນິວ 280", "ຜ້າໄວນິວ 290", "ຜ້າໄວນິວ 300", "ຜ້າໄວນິວ 310", "ຜ້າໄວນິວ 320"],
+            "ແຜ່ນພຣາດສະຕີກ": ["ສີແດງ", "ສີດຳ", "ສີທອງ", "ສີຂາວ", "ສີເຫຼືອງ", "ສີອ່ອນ", "ໃສແຂງ", "ໃສ 2mm", "ສີຟ້າ", "ສີຂຽວ", "ສີຟ້າອ່ອນ 2mm"],
+            "ແຜ່ນ PVC": ["ແຜ່ນ PVC ໜາ 1.2mm", "ແຜ່ນ PVC ໜາ 1.5mm", "ແຜ່ນ PVC ໜາ 5mm", "ແຜ່ນ PVC ໜາ 8mm", "ແຜ່ນ PVC ໜາ 1cm"],
+            "ແຜນຄອມໂພສິດ": ["ສີຂາວ", "ສີດໍາ", "ສີແດງ", "ສີນ້ໍາເງິນ", "ສີຂຽວ", "ສີເຫຼືອງ", "ສີສົ້ມ", "ສີຄີມ", "ສີເງິນ", "ສີເທົາ", "ສີຄໍາ", "ສີທອງແດງ"],
+            "ແຜ່ນ KT": ["ແຜ່ນ KT ມາດຕະຖານ"],
+            "ແຜ່ນລູກພຸກ": ["ແຜ່ນລູກພຸກ ມາດຕະຖານ"]
+        };
+
+        // Core State
+        let categories = [];
+        let items = []; 
+        let transactions = []; 
+        let cloudApiUrl = ''; 
+
+        // Persistent LocalStorage Helpers
+        const storage = {
+            get: (key) => {
+                try { return JSON.parse(localStorage.getItem(key)); } catch(e) { return null; }
+            },
+            set: (key, val) => {
+                try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+            }
+        };
+
+        // Generate Initials / Categories Map
+        function initializeData() {
+            const savedItems = storage.get('inv_items');
+            const savedTx = storage.get('inv_transactions');
+            const savedCategories = storage.get('inv_categories');
+            cloudApiUrl = storage.get('inv_cloud_url') || '';
+
+            if (savedItems && savedTx && savedCategories) {
+                items = savedItems;
+                transactions = savedTx;
+                categories = savedCategories;
+
+                // --- AUTO MIGRATION (ແກ້ໄຂບັນຫາຍອດເລີ່ມຕົ້ນຄ້າງ 10 ຊິ້ນໃຫ້ເປັນ 0 ອັດຕະໂນມັດ ແລະ ຮັບປະກັນວ່າມີ minQty) ---
+                let isMigrated = false;
+                items.forEach(item => {
+                    if (item.initialQty === 10) {
+                        item.initialQty = 0; 
+                        isMigrated = true;
+                    }
+                    if (item.minQty === undefined) {
+                        item.minQty = 5; // Default low stock warning threshold is 5
+                        isMigrated = true;
+                    }
+                });
+
+                if (isMigrated) {
+                    recalculateStock();
+                    saveToStorage();
+                }
+            } else {
+                categories = Object.keys(initialRawData);
+                let idCounter = 1000;
+                
+                categories.forEach((cat, catIdx) => {
+                    const prefix = getCategoryPrefix(cat);
+                    initialRawData[cat].forEach((name, itemIdx) => {
+                        const itemCode = `${prefix}-${100 + itemIdx}`;
+                        items.push({
+                            id: `item-${idCounter++}`,
+                            code: itemCode,
+                            name: name,
+                            category: cat,
+                            initialQty: 0, 
+                            stockIn: 0,
+                            stockOut: 0,
+                            audited: 0,
+                            balance: 0,
+                            minQty: 5 // Default warning limit is 5
+                        });
+                    });
+                });
+
+                // Set initial default transactions for history look
+                items.slice(0, 5).forEach((item, index) => {
+                    transactions.push({
+                        id: `tx-${Date.now()}-${index}`,
+                        timestamp: new Date(Date.now() - index * 3600000 * 2).toISOString(),
+                        type: 'IN', 
+                        itemCode: item.code,
+                        itemName: item.name,
+                        category: item.category,
+                        qty: 10,
+                        note: "ນຳເຂົ້າຕັ້ງຕົ້ນລະບົບ"
+                    });
+                });
+
+                recalculateStock();
+                saveToStorage();
+            }
+
+            // Sync with Google Sheet immediately if URL is configured
+            if (cloudApiUrl) {
+                document.getElementById('cloud-api-url').value = cloudApiUrl;
+                updateCloudStatusBanner('connecting');
+                testAndSyncCloud(true); // silent sync on launch
+            } else {
+                updateCloudStatusBanner('offline');
+            }
+
+            // Load Google Apps Script Template
+            loadGoogleAppsScriptTemplate();
+        }
+
+        // Generate prefixes for codes automatically
+        function getCategoryPrefix(categoryName) {
+            const map = {
+                "ສະຕີກເກີໜ້າ": "STFN",
+                "ສະຕີກເກີບາງ": "STBG",
+                "ຟິມເຄືອບສະຕີກເກີ": "FMCB",
+                "ເຈ້ຍຮູບ": "JRUP",
+                "ສະຕີກເກີສີທູ": "STT2",
+                "ສະຕີກເກີສະທ້ອນແສງ": "STSL",
+                "ສະຕີກເກີສະທ້ອນແສງແບບສີ": "STSS",
+                "ຂອບໂລໂກໄຟ": "KLGF",
+                "ສະຕີກເກີສຳລັບຕັດ": "STDT",
+                "ສີພີມຈັກໃຫຍ່": "SPJY",
+                "ສີພີມຈັກນ້ອຍ": "SPJN",
+                "ຜ້າບາງ": "PBBG",
+                "ຜ້າໄວນິວ": "PWNW",
+                "ຜ້າໄວນິວຫຼັງດໍາ": "PWLD",
+                "ແຜ່ນພຣາດສະຕີກ": "PPST",
+                "ແຜ່ນ PVC": "HPVC",
+                "ແຜນຄອມໂພສິດ": "HKPS",
+                "ແຜ່ນ KT": "HPKT",
+                "ແຜ່ນລູກພຸກ": "HPLP"
+            };
+            
+            if (map[categoryName]) return map[categoryName];
+            return categoryName.substring(0, 3).toUpperCase();
+        }
+
+        // Centralized Stock Recalculation Engine
+        function recalculateStock() {
+            items.forEach(item => {
+                item.stockIn = 0;
+                item.stockOut = 0;
+                item.audited = 0;
+                item.balance = item.initialQty || 0;
+            });
+
+            const sortedTx = [...transactions].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            sortedTx.forEach(tx => {
+                const item = items.find(i => i.code === tx.itemCode);
+                if (item) {
+                    if (tx.type === 'IN') {
+                        item.stockIn += tx.qty;
+                    } else if (tx.type === 'OUT') {
+                        item.stockOut += tx.qty;
+                    } else if (tx.type === 'AUDIT') {
+                        const diff = tx.newValue - tx.oldValue;
+                        item.audited += diff;
+                    }
+                }
+            });
+
+            items.forEach(item => {
+                item.balance = (item.initialQty || 0) + item.stockIn + item.audited - item.stockOut;
+            });
+        }
+
+        function saveToStorage() {
+            storage.set('inv_items', items);
+            storage.set('inv_transactions', transactions);
+            storage.set('inv_categories', categories);
+            storage.set('inv_cloud_url', cloudApiUrl);
+            
+            // Push changes to cloud if connected
+            if (cloudApiUrl) {
+                pushDataToCloud();
+            }
+        }
+
+        // --- 2. CLOUD SYNC SERVICES (GOOGLE SHEETS INTEGRATION) ---
+
+        function updateCloudStatusBanner(status) {
+            const banner = document.getElementById('cloud-status-banner');
+            const text = document.getElementById('cloud-status-text');
+            const indicator = document.getElementById('sync-indicator');
+            const label = document.getElementById('sync-status-label');
+
+            if (status === 'offline') {
+                banner.className = "mb-6 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between text-amber-800 text-sm";
+                text.innerHTML = `<i class="fa-solid fa-cloud-arrow-up text-amber-500 animate-bounce mr-2"></i> <b>ໂໝດທ້ອງຖິ່ນ (Offline):</b> ຂໍ້ມູນຖືກບັນທຶກໄວ້ໃນບຣາວເຊີນີ້ເທົ່ານັ້ນ. ກະລຸນາເຊື່ອມຕໍ່ Google Sheet ເພື່ອຊິງຄ໌ຂໍ້ມູນຂ້າມເຄື່ອງ.`;
+                if (indicator) { indicator.className = "h-3 w-3 rounded-full bg-slate-300"; }
+                if (label) { label.textContent = "Offline (ຍັງບໍ່ມີການເຊື່ອມຕໍ່)"; }
+            } else if (status === 'connecting') {
+                banner.className = "mb-6 p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between text-blue-800 text-sm";
+                text.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-blue-500 mr-2"></i> ກຳລັງເຊື່ອມຕໍ່ ແລະ ດຶງຂໍ້ມູນຈາກ Google Sheet...`;
+                if (indicator) { indicator.className = "h-3 w-3 rounded-full bg-blue-400 animate-pulse"; }
+                if (label) { label.textContent = "ກຳລັງຊິງຄ໌..."; }
+            } else if (status === 'connected') {
+                banner.className = "mb-6 p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-emerald-800 text-sm";
+                text.innerHTML = `<i class="fa-solid fa-cloud-check text-emerald-600 text-base mr-2"></i> <b>ເຊື່ອມຕໍ່ Cloud ແລ້ວ:</b> ຖານຂໍ້ມູນກຳລັງຊິງຄ໌ກັບ Google Sheet ທຸກຄັ້ງທີ່ມີການປ່ຽນແປງ.`;
+                if (indicator) { indicator.className = "h-3 w-3 rounded-full bg-emerald-500"; }
+                if (label) { label.textContent = "Online (ເຊື່ອມຕໍ່ Google Sheet ແລ້ວ)"; }
+            } else if (status === 'error') {
+                banner.className = "mb-6 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-between text-rose-800 text-sm";
+                text.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-500 mr-2"></i> <b>ການເຊື່ອມຕໍ່ຜິດພາດ:</b> ບໍ່ສາມາດເຊື່ອມຕໍ່ກັບ Google API Web App ໄດ້. ກະລຸນາກວດສອບ URL ອີກຄັ້ງ.`;
+                if (indicator) { indicator.className = "h-3 w-3 rounded-full bg-rose-500"; }
+                if (label) { label.textContent = "ການເຊື່ອມຕໍ່ຜິດພາດ!"; }
+            }
+        }
+
+        // Test Connection & Pull Data
+        async function testAndSyncCloud(silent = false) {
+            const url = document.getElementById('cloud-api-url').value.trim();
+            if (!url) {
+                if (!silent) showAlert('ຂໍ້ຜິດພາດ', 'ກະລຸນາປ້ອນ URL ຂອງ Google Web App ກ່ອນ!', 'error');
+                return;
+            }
+
+            if (!silent) {
+                document.getElementById('btn-sync-now').disabled = true;
+                document.getElementById('btn-sync-now').innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> ກຳລັງຊິງຄ໌...`;
+            }
+            
+            updateCloudStatusBanner('connecting');
+
+            try {
+                // Fetch request with timeout guard
+                const response = await fetch(`${url}?action=read`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const cloudData = await response.json();
+                
+                if (cloudData.status === 'success') {
+                    // Extract items and transactions
+                    if (cloudData.items && cloudData.items.length > 0) {
+                        items = cloudData.items;
+
+                        // --- MIGRATION CHECK FOR INCOMING CLOUD DATA ---
+                        items.forEach(item => {
+                            if (item.initialQty === 10) item.initialQty = 0;
+                            if (item.minQty === undefined) item.minQty = 5;
+                        });
+                    }
+                    if (cloudData.transactions && cloudData.transactions.length > 0) {
+                        transactions = cloudData.transactions;
+                    }
+                    if (cloudData.categories && cloudData.categories.length > 0) {
+                        categories = cloudData.categories;
+                    }
+
+                    cloudApiUrl = url;
+                    recalculateStock();
+                    
+                    // Save to local storage cache
+                    storage.set('inv_items', items);
+                    storage.set('inv_transactions', transactions);
+                    storage.set('inv_categories', categories);
+                    storage.set('inv_cloud_url', cloudApiUrl);
+
+                    updateCloudStatusBanner('connected');
+                    if (!silent) showAlert('ຊິງຄ໌ຂໍ້ມູນສຳເລັດ', 'ດຶງຂໍ້ມູນຫຼ້າສຸດຈາກ Google Sheet ສຳເລັດແລ້ວ!', 'success');
+                    
+                    // Force push cleaned balance back to Sheets
+                    pushDataToCloud();
+
+                    // Refresh views
+                    switchTab('dashboard');
+                } else {
+                    throw new Error('Cloud returned empty/failed status');
+                }
+            } catch (error) {
+                console.error("Cloud Sync Error: ", error);
+                updateCloudStatusBanner('error');
+                if (!silent) showAlert('ເຊື່ອມຕໍ່ບໍ່ສຳເລັດ', 'ກະລຸນາກວດສອບ Web App URL ຂອງ Google Script ໃຫ້ຖືກຕ້ອງ ແລະ ໃຫ້ແນ່ໃຈວ່າໄດ້ Deploy ເປັນ "Anyone" ແລ້ວ.', 'error');
+            } finally {
+                if (!silent) {
+                    const btn = document.getElementById('btn-sync-now');
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-rotate"></i> ຊິງຄ໌ຂໍ້ມູນທັນທີ`;
+                }
+            }
+        }
+
+        // Push current local state to Cloud Sheets
+        async function pushDataToCloud() {
+            if (!cloudApiUrl) return;
+
+            try {
+                const payload = {
+                    action: "write",
+                    items: items,
+                    transactions: transactions,
+                    categories: categories
+                };
+
+                // Send beacon/post request to Google Web App
+                await fetch(cloudApiUrl, {
+                    method: 'POST',
+                    mode: 'no-cors', 
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                console.log("State successfully pushed to Google Cloud Sheet.");
+            } catch (e) {
+                console.warn("Failed pushing current changes to cloud database (offline/network problem):", e);
+            }
+        }
+
+        function saveCloudSettings(e) {
+            e.preventDefault();
+            const url = document.getElementById('cloud-api-url').value.trim();
+            if (url) {
+                cloudApiUrl = url;
+                storage.set('inv_cloud_url', url);
+                testAndSyncCloud(false);
+            }
+        }
+
+        // Templates of code to be copied into Google Apps Script
+        function loadGoogleAppsScriptTemplate() {
+            const code = `/**
+ * Google Apps Script for "ລະບົບຈັດເກັບອຸປະກອນ ແລະ ສະຕ໋ອກ"
+ * ໃຊ້ເປັນ Database ຈັດເກັບຂໍ້ມູນຂ້າມເຄື່ອງ ແລະ ບຣາວເຊີອື່ນໆ
+ */
+
+const Properties = PropertiesService.getScriptProperties();
+
+// GET Method - Reads data from Sheets
+function doGet(e) {
+  if (!e || !e.parameter || !e.parameter.action) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "success",
+      message: "ລະບົບເຊື່ອມຕໍ່ Cloud ຂອງ Google Sheet ເຮັດວຽກໄດ້ຢ່າງຖືກຕ້ອງ ແລະ ພ້ອມໃຊ້ງານແລ້ວ! ກະລຸນາກັອບປີ້ URL ນີ້ໄປປ້ອນໃສ່ໃນ 'ໜ້າຕັ້ງຄ່າ Cloud' ຂອງລະບົບຈັດເກັບອຸປະກອນຂອງທ່ານ."
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  const action = e.parameter.action;
+  
+  if (action === "read") {
+    const rawItems = Properties.getProperty("inv_items") || "[]";
+    const rawTransactions = Properties.getProperty("inv_transactions") || "[]";
+    const rawCategories = Properties.getProperty("inv_categories") || "[]";
+    
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "success",
+      items: JSON.parse(rawItems),
+      transactions: JSON.parse(rawTransactions),
+      categories: JSON.parse(rawCategories)
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Invalid Action" }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// POST Method - Writes data to Sheets
+function doPost(e) {
+  if (!e || !e.postData) {
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: "error", 
+      message: "ລະບົບເຮັດວຽກໄດ້ປົກກະຕິ! ກະລຸນາສົ່ງຂໍ້ມູນຜ່ານເວັບໄຊເທົ່ານັ້ນ." 
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  try {
+    const postData = JSON.parse(e.postData.contents);
+    const action = postData.action;
+    
+    if (action === "write") {
+      // Save arrays into Script Properties Database
+      Properties.setProperty("inv_items", JSON.stringify(postData.items));
+      Properties.setProperty("inv_transactions", JSON.stringify(postData.transactions));
+      Properties.setProperty("inv_categories", JSON.stringify(postData.categories));
+      
+      // OPTIONAL: Additionally backup into spreadsheet for physical viewing
+      backupToSheets(postData.items, postData.transactions);
+      
+      return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Write human-readable tables into the Google Sheet automatically for backups
+function backupToSheets(itemsList, transactionsList) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) return;
+  
+  // 1. Write Balance Sheets
+  let sheetBalance = ss.getSheetByName("ຍອດສະຕ໋ອກຄົງເຫຼືອ");
+  if (!sheetBalance) {
+    sheetBalance = ss.insertSheet("ຍອດສະຕ໋ອກຄົງເຫຼືອ");
+  }
+  sheetBalance.clear();
+  sheetBalance.appendRow(["ລະຫັດອຸປະກອນ", "ຊື່ອຸປະກອນ", "ໝວດໝູ່", "ນຳເຂົ້າສະສົມ", "ເບີກສະສົມ", "ຄົງເຫຼືອໃນສາງ", "ຈຸດເຕືອນສະຕ໋ອກຕໍ່າ"]);
+  itemsList.forEach(item => {
+    sheetBalance.appendRow([item.code, item.name, item.category, item.stockIn, item.stockOut, item.balance, item.minQty || 5]);
+  });
+  
+  // 2. Write Transaction Logs
+  let sheetLogs = ss.getSheetByName("ປະຫວັດການເຄື່ອນໄຫວ");
+  if (!sheetLogs) {
+    sheetLogs = ss.insertSheet("ປະຫວັດການເຄື່ອນໄຫວ");
+  }
+  sheetLogs.clear();
+  sheetLogs.appendRow(["ວັນທີ-ເວລາ", "ລະຫັດອຸປະກອນ", "ຊື່ອຸປະກອນ", "ໝວດໝູ່", "ປະເພດ", "ຈຳນວນ", "ໝາຍເຫດ"]);
+  transactionsList.forEach(tx => {
+    sheetLogs.appendRow([tx.timestamp, tx.itemCode, tx.itemName, tx.category, tx.type, tx.qty, tx.note]);
+  });
+}`;
+            document.getElementById('apps-script-code-block').value = code;
+        }
+
+        function copyAppsScriptCode() {
+            const block = document.getElementById('apps-script-code-block');
+            block.select();
+            document.execCommand('copy');
+            showAlert('ສຳເລັດ', 'ຄັດລອກຊຸດໂຄດ Apps Script ໄປຍັງ Clipboard ແລ້ວ!', 'success');
+        }
+
+
+        // --- 3. LAYOUT & TAB NAVIGATION ---
+        
+        function renderNavigation() {
+            const navContainer = document.getElementById('nav-links');
+            const mobileContainer = document.getElementById('mobile-menu');
+            
+            navContainer.innerHTML = '';
+            mobileContainer.innerHTML = '';
+
+            tabs.forEach(tab => {
+                const link = document.createElement('button');
+                link.id = `nav-tab-${tab.id}`;
+                link.onclick = () => switchTab(tab.id);
+                link.className = `px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-blue-100 hover:text-white hover:bg-blue-700`;
+                link.innerHTML = `<i class="fa-solid ${tab.icon}"></i> <span>${tab.name}</span>`;
+                navContainer.appendChild(link);
+
+                const mLink = document.createElement('button');
+                mLink.id = `mob-tab-${tab.id}`;
+                mLink.onclick = () => {
+                    switchTab(tab.id);
+                    toggleMobileMenu();
+                };
+                mLink.className = `w-full text-left px-3 py-2 rounded-lg text-base font-medium text-blue-100 hover:bg-blue-800 hover:text-white block flex items-center space-x-3`;
+                mLink.innerHTML = `<i class="fa-solid ${tab.icon} w-5 text-center"></i> <span>${tab.name}</span>`;
+                mobileContainer.appendChild(mLink);
+            });
+        }
+
+        function switchTab(tabId) {
+            tabs.forEach(tab => {
+                const section = document.getElementById(`section-${tab.id}`);
+                if (section) section.classList.add('hidden');
+                
+                const dtTab = document.getElementById(`nav-tab-${tab.id}`);
+                if (dtTab) {
+                    dtTab.classList.remove('bg-blue-800', 'text-white', 'shadow-inner');
+                    dtTab.classList.add('text-blue-100', 'hover:bg-blue-700');
+                }
+
+                const mbTab = document.getElementById(`mob-tab-${tab.id}`);
+                if (mbTab) {
+                    mbTab.classList.remove('bg-blue-900', 'text-white');
+                    mbTab.classList.add('text-blue-100', 'hover:bg-blue-800');
+                }
+            });
+
+            const activeSection = document.getElementById(`section-${tabId}`);
+            if (activeSection) activeSection.classList.remove('hidden');
+
+            const activeDtTab = document.getElementById(`nav-tab-${tabId}`);
+            if (activeDtTab) {
+                activeDtTab.classList.add('bg-blue-800', 'text-white', 'shadow-inner');
+                activeDtTab.classList.remove('text-blue-100', 'hover:bg-blue-700');
+            }
+
+            const activeMbTab = document.getElementById(`mob-tab-${tabId}`);
+            if (activeMbTab) {
+                activeMbTab.classList.add('bg-blue-900', 'text-white');
+                activeMbTab.classList.remove('text-blue-100', 'hover:bg-blue-800');
+            }
+
+            if (tabId === 'dashboard') loadDashboard();
+            if (tabId === 'stock') loadStock();
+            if (tabId === 'stockin') loadStockInPage();
+            if (tabId === 'stockout') loadStockOutPage();
+            if (tabId === 'audit') loadAuditPage();
+            if (tabId === 'codes') loadCodesPage();
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileMenu);
+
+        // --- 4. ALERTS & NOTIFICATIONS ---
+        
+        function showAlert(title, message, type = 'success') {
+            const alertBox = document.getElementById('alert-box');
+            const alertIcon = document.getElementById('alert-icon');
+            const alertTitle = document.getElementById('alert-title');
+            const alertMessage = document.getElementById('alert-message');
+
+            alertTitle.textContent = title;
+            alertMessage.textContent = message;
+
+            alertBox.className = "mb-6 p-4 rounded-lg shadow-sm border flex items-start space-x-3 transition-all duration-300 ";
+
+            if (type === 'success') {
+                alertBox.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
+                alertIcon.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i>`;
+            } else if (type === 'error') {
+                alertBox.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-800');
+                alertIcon.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-600"></i>`;
+            } else if (type === 'warning') {
+                alertBox.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-800');
+                alertIcon.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600"></i>`;
+            }
+
+            alertBox.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            setTimeout(closeAlert, 8000);
+        }
+
+        // --- 5. CATEGORY DROPDOWN DYNAMIC FILTER ---
+        function filterCategoryDropdown(searchId, selectId, itemSelectId) {
+            const searchVal = document.getElementById(searchId).value.toLowerCase().trim();
+            const select = document.getElementById(selectId);
+            
+            select.innerHTML = '<option value="">-- ກະລຸນາເລືອກໝວດໝູ່ --</option>';
+            
+            const filteredCats = categories.filter(cat => cat.toLowerCase().includes(searchVal));
+            filteredCats.forEach(cat => {
+                select.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+            
+            // Reset the item dropdown because category selection context changed
+            const itemSelect = document.getElementById(itemSelectId);
+            itemSelect.innerHTML = '<option value="">-- ກະລຸນາເລືອກອຸປະກອນ --</option>';
+            itemSelect.disabled = true;
+            
+            // Clear related field codes
+            if (selectId === 'in-category') {
+                document.getElementById('in-code').value = '';
+            } else if (selectId === 'out-category') {
+                document.getElementById('out-code').value = '';
+                document.getElementById('out-available').value = '';
+                document.getElementById('out-available').className = "w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 text-sm focus:outline-none";
+            }
+        }
+
+        function closeAlert() {
+            document.getElementById('alert-box').classList.add('hidden');
+        }
+
+
+        // --- 6. CUSTOM CONFIRMATION MODAL SYSTEM ---
+        let deleteTargetType = ''; 
+        let deleteTargetId = '';
+
+        function showConfirmModal(title, message, type, id) {
+            deleteTargetType = type;
+            deleteTargetId = id;
+            document.getElementById('confirm-modal-title').textContent = title;
+            document.getElementById('confirm-modal-message').textContent = message;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            deleteTargetType = '';
+            deleteTargetId = '';
+        }
+
+        function handleConfirmAction() {
+            if (deleteTargetType === 'device') {
+                executeDeleteDevice(deleteTargetId);
+            } else if (deleteTargetType === 'transaction') {
+                executeDeleteTransaction(deleteTargetId);
+            }
+            closeConfirmModal();
+        }
+
+        function executeDeleteDevice(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            transactions = transactions.filter(tx => tx.itemCode !== item.code);
+            items = items.filter(i => i.id !== id);
+            
+            recalculateStock();
+            saveToStorage();
+            showAlert('ລຶບອຸປະກອນ', `ລຶບອຸປະກອນອອກຈາກລະບົບຮຽບຮ້ອຍແລ້ວ`, 'warning');
+            loadCodesPage();
+        }
+
+        function executeDeleteTransaction(id) {
+            const txIndex = transactions.findIndex(t => t.id === id);
+            if (txIndex === -1) return;
+            
+            const tx = transactions[txIndex];
+            const item = items.find(i => i.code === tx.itemCode);
+
+            if (tx.type === 'IN' && item) {
+                if (item.balance - tx.qty < 0) {
+                    showAlert('ບໍ່ສາມາດລຶບໄດ້', `ບໍ່ສາມາດລຶບລາຍການນຳເຂົ້າໄດ້ ເພາະຈະເຮັດໃຫ້ສະຕ໋ອກຄົງເຫຼືອຂອງ ${item.name} ຕິດລົບ!`, 'error');
+                    return;
+                }
+            }
+
+            transactions.splice(txIndex, 1);
+            
+            recalculateStock();
+            saveToStorage();
+            
+            showAlert('ລຶບລາຍການສຳເລັດ', `ລຶບປະຫວັດການ ${tx.type === 'IN' ? 'ນຳເຂົ້າ' : 'ເບີກ'} ຂອງອຸປະກອນ ${tx.itemName} ຮຽບຮ້ອຍແລ້ວ`, 'success');
+            
+            if (tx.type === 'IN') renderInHistory();
+            if (tx.type === 'OUT') renderOutHistory();
+        }
+
+
+        // --- 7. BUSINESS LOGIC: DASHBOARD ---
+
+        function loadDashboard() {
+            document.getElementById('dash-total-items').textContent = items.length;
+            
+            const totalStock = items.reduce((acc, item) => acc + item.balance, 0);
+            document.getElementById('dash-total-stock').textContent = totalStock;
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayTx = transactions.filter(tx => tx.timestamp.startsWith(todayStr));
+            document.getElementById('dash-today-tx').textContent = todayTx.length;
+
+            // Low Stock Items check using each item's customized minQty
+            const lowStockItems = items.filter(item => item.balance <= (item.minQty !== undefined ? item.minQty : 5));
+            document.getElementById('dash-low-stock').textContent = lowStockItems.length;
+
+            const container = document.getElementById('dash-history-list');
+            container.innerHTML = '';
+
+            const recentTx = [...transactions]
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .slice(0, 5);
+
+            if (recentTx.length === 0) {
+                container.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400">ບໍ່ມີຂໍ້ມູນການເຄື່ອນໄຫວໃນຂະນະນີ້</td></tr>`;
+                return;
+            }
+
+            recentTx.forEach(tx => {
+                const tr = document.createElement('tr');
+                const date = new Date(tx.timestamp).toLocaleString('lo-LA', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+                
+                let typeBadge = '';
+                if (tx.type === 'IN') {
+                    typeBadge = `<span class="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">ນຳເຂົ້າ</span>`;
+                } else if (tx.type === 'OUT') {
+                    typeBadge = `<span class="px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800">ເບີກ</span>`;
+                } else {
+                    typeBadge = `<span class="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">ປັບສະຕ໋ອກ</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="py-3 font-medium text-slate-500">${date}</td>
+                    <td class="py-3">${typeBadge}</td>
+                    <td class="py-3 font-semibold text-slate-700">${tx.itemName} <span class="text-xs text-slate-400 block">${tx.category} [${tx.itemCode}]</span></td>
+                    <td class="py-3 text-right font-bold ${tx.type === 'IN' ? 'text-emerald-600' : tx.type === 'OUT' ? 'text-rose-600' : 'text-indigo-600'}">${tx.type === 'OUT' ? '-' : '+'}${tx.qty}</td>
+                    <td class="py-3 pl-4 text-slate-500 text-xs italic truncate max-w-[150px]" title="${tx.note || ''}">${tx.note || '-'}</td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+
+        // --- 8. BUSINESS LOGIC: STOCK BALANCE ---
+
+        function loadStock() {
+            const filterSelect = document.getElementById('filter-stock-category');
+            filterSelect.innerHTML = '<option value="">ທຸກໝວດໝູ່</option>';
+            categories.forEach(cat => {
+                filterSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+
+            renderStockTable();
+        }
+
+        function renderStockTable() {
+            const searchVal = document.getElementById('search-stock').value.toLowerCase().trim();
+            const catFilter = document.getElementById('filter-stock-category').value;
+            const container = document.getElementById('stock-table-body');
+            container.innerHTML = '';
+
+            let filtered = items;
+
+            if (catFilter) {
+                filtered = filtered.filter(item => item.category === catFilter);
+            }
+
+            if (searchVal) {
+                filtered = filtered.filter(item => 
+                    item.name.toLowerCase().includes(searchVal) || 
+                    item.code.toLowerCase().includes(searchVal) || 
+                    item.category.toLowerCase().includes(searchVal)
+                );
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">ບໍ່ພົບຂໍ້ມູນອຸປະກອນທີ່ຄົ້ນຫາ</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                
+                let badgeClass = "bg-green-100 text-green-800";
+                let statusText = "ມີພໍໃຊ້";
+                const limit = item.minQty !== undefined ? item.minQty : 5;
+
+                if (item.balance <= 0) {
+                    badgeClass = "bg-red-100 text-red-800";
+                    statusText = "ໝົດສາງ";
+                } else if (item.balance <= limit) {
+                    badgeClass = "bg-amber-100 text-amber-800";
+                    statusText = "ໃກ້ຈະໝົດ";
+                }
+
+                tr.innerHTML = `
+                    <td class="p-4 font-mono font-semibold text-slate-500">${item.code}</td>
+                    <td class="p-4 font-bold text-slate-700">${item.name}</td>
+                    <td class="p-4 text-slate-600">${item.category}</td>
+                    <td class="p-4 text-center font-semibold text-emerald-600">${item.stockIn}</td>
+                    <td class="p-4 text-center font-semibold text-rose-600">${item.stockOut}</td>
+                    <td class="p-4 text-center font-extrabold text-blue-700 text-base">${item.balance}</td>
+                    <td class="p-4 text-center">
+                        <span class="px-2.5 py-1 text-xs font-bold rounded-full ${badgeClass}">${statusText}</span>
+                    </td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+        function filterStock() {
+            renderStockTable();
+        }
+
+        // --- EXPORT TO EXCEL / CSV FUNCTION ---
+        function downloadStockExcel() {
+            const searchVal = document.getElementById('search-stock').value.toLowerCase().trim();
+            const catFilter = document.getElementById('filter-stock-category').value;
+            
+            let filtered = items;
+
+            if (catFilter) {
+                filtered = filtered.filter(item => item.category === catFilter);
+            }
+
+            if (searchVal) {
+                filtered = filtered.filter(item => 
+                    item.name.toLowerCase().includes(searchVal) || 
+                    item.code.toLowerCase().includes(searchVal) || 
+                    item.category.toLowerCase().includes(searchVal)
+                );
+            }
+
+            if (filtered.length === 0) {
+                showAlert('ບໍ່ມີຂໍ້ມູນ', 'ບໍ່ມີຂໍ້ມູນທີ່ຈະດາວໂຫຼດ Excel ໄດ້!', 'warning');
+                return;
+            }
+
+            // Create CSV text with UTF-8 BOM to make Excel read Lao characters properly
+            let csvContent = "\uFEFF"; 
+            csvContent += "ລະຫັດອຸປະກອນ,ຊື່ອຸປະກອນ,ໝວດໝູ່,ນຳເຂົ້າສະສົມ,ເບີກສະສົມ,ຄົງເຫຼືອໃນສາງ,ຈຸດເຕືອນສະຕ໋ອກຕໍ່າ,ສະຖານະ\n";
+
+            filtered.forEach(item => {
+                let statusText = "ມີພໍໃຊ້";
+                const limit = item.minQty !== undefined ? item.minQty : 5;
+                if (item.balance <= 0) {
+                    statusText = "ໝົດສາງ";
+                } else if (item.balance <= limit) {
+                    statusText = "ໃກ້ຈະໝົດ";
+                }
+
+                // Clean commas/quotes in name & category to avoid format breakage
+                const cleanedName = item.name.replace(/"/g, '""');
+                const cleanedCategory = item.category.replace(/"/g, '""');
+
+                csvContent += `"${item.code}","${cleanedName}","${cleanedCategory}",${item.stockIn},${item.stockOut},${item.balance},${limit},"${statusText}"\n`;
+            });
+
+            // Trigger file download in browser
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            const today = new Date().toISOString().split('T')[0];
+            link.setAttribute("href", url);
+            link.setAttribute("download", `ລາຍງານສະຕ໋ອກຄົງເຫຼືອ_${today}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+
+        // --- 9. BUSINESS LOGIC: STOCK IN (ນຳເຂົ້າເຄື່ອງ) ---
+
+        function loadStockInPage() {
+            // Reset category search input
+            document.getElementById('in-category-search').value = '';
+            populateCategoryDropdown('in-category');
+            renderInHistory();
+        }
+
+        function populateCategoryDropdown(selectId) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">-- ກະລຸນາເລືອກໝວດໝູ່ --</option>';
+            categories.forEach(cat => {
+                select.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+        }
+
+        function populateItemDropdown(catSelectId, itemSelectId) {
+            const catVal = document.getElementById(catSelectId).value;
+            const itemSelect = document.getElementById(itemSelectId);
+            
+            itemSelect.innerHTML = '<option value="">-- ກະລຸນາເລືອກອຸປະກອນ --</option>';
+            
+            if (!catVal) {
+                itemSelect.disabled = true;
+                return;
+            }
+
+            const catItems = items.filter(item => item.category === catVal);
+            catItems.forEach(item => {
+                itemSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+            });
+
+            itemSelect.disabled = false;
+        }
+
+        function updateInItemCode() {
+            const itemId = document.getElementById('in-item').value;
+            const codeInput = document.getElementById('in-code');
+            
+            if (!itemId) {
+                codeInput.value = '';
+                return;
+            }
+
+            const item = items.find(i => i.id === itemId);
+            codeInput.value = item ? item.code : '';
+        }
+
+        function handleStockIn(e) {
+            e.preventDefault();
+            
+            const itemId = document.getElementById('in-item').value;
+            const qty = parseInt(document.getElementById('in-qty').value);
+            const note = document.getElementById('in-note').value.trim();
+
+            if (!itemId || !qty || qty <= 0) {
+                showAlert('ຜິດພາດ', 'ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ ແລະ ຖືກຕ້ອງ', 'error');
+                return;
+            }
+
+            const itemIndex = items.findIndex(i => i.id === itemId);
+            if (itemIndex === -1) return;
+
+            const tx = {
+                id: `tx-${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                type: 'IN',
+                itemCode: items[itemIndex].code,
+                itemName: items[itemIndex].name,
+                category: items[itemIndex].category,
+                qty: qty,
+                note: note || 'ນຳເຂົ້າເຄື່ອງ'
+            };
+
+            transactions.push(tx);
+            recalculateStock();
+            saveToStorage();
+            
+            showAlert('ນຳເຂົ້າສຳເລັດ', `ໄດ້ນຳເຂົ້າ ${items[itemIndex].name} จຳນວນ ${qty} ເປັນທີ່ຮຽບຮ້ອຍ`, 'success');
+            
+            document.getElementById('form-stock-in').reset();
+            document.getElementById('in-item').disabled = true;
+            document.getElementById('in-code').value = '';
+
+            renderInHistory();
+        }
+
+        // Output table histories
+        function renderInHistory() {
+            const container = document.getElementById('in-history-table');
+            container.innerHTML = '';
+
+            const inTx = transactions
+                .filter(tx => tx.type === 'IN')
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            if (inTx.length === 0) {
+                container.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">ບໍ່ມີປະຫວັດການນຳເຂົ້າ</td></tr>`;
+                return;
+            }
+
+            inTx.forEach(tx => {
+                const date = new Date(tx.timestamp).toLocaleString('lo-LA');
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-4 font-medium text-slate-500">${date}</td>
+                    <td class="p-4 font-mono font-bold text-slate-600">${tx.itemCode}</td>
+                    <td class="p-4 font-bold text-slate-700">${tx.itemName} <span class="text-xs text-slate-400 block">${tx.category}</span></td>
+                    <td class="p-4 text-center text-emerald-600 font-extrabold">+${tx.qty}</td>
+                    <td class="p-4 text-slate-500 max-w-[200px] truncate" title="${tx.note}">${tx.note}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex justify-center space-x-2">
+                            <button onclick="openEditTxModal('${tx.id}')" class="text-blue-500 hover:text-blue-700">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteTransaction('${tx.id}')" class="text-rose-500 hover:text-rose-700">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+
+        // --- 10. BUSINESS LOGIC: STOCK OUT (ເບີກເຄື່ອງ) ---
+
+        function loadStockOutPage() {
+            // Reset category search input
+            document.getElementById('out-category-search').value = '';
+            populateCategoryDropdown('out-category');
+            renderOutHistory();
+        }
+
+        function updateOutItemDetails() {
+            const itemId = document.getElementById('out-item').value;
+            const codeInput = document.getElementById('out-code');
+            const availInput = document.getElementById('out-available');
+
+            if (!itemId) {
+                codeInput.value = '';
+                availInput.value = '';
+                return;
+            }
+
+            const item = items.find(i => i.id === itemId);
+            if (item) {
+                codeInput.value = item.code;
+                availInput.value = item.balance;
+                
+                const limit = item.minQty !== undefined ? item.minQty : 5;
+                if (item.balance <= 0) {
+                    availInput.className = "w-full px-3 py-2 bg-red-100 border border-slate-200 rounded-xl font-bold text-red-600 text-sm focus:outline-none";
+                } else if (item.balance <= limit) {
+                    availInput.className = "w-full px-3 py-2 bg-amber-100 border border-slate-200 rounded-xl font-bold text-amber-600 text-sm focus:outline-none";
+                } else {
+                    availInput.className = "w-full px-3 py-2 bg-green-100 border border-slate-200 rounded-xl font-bold text-green-600 text-sm focus:outline-none";
+                }
+            }
+        }
+
+        function handleStockOut(e) {
+            e.preventDefault();
+
+            const itemId = document.getElementById('out-item').value;
+            const qty = parseInt(document.getElementById('out-qty').value);
+            const note = document.getElementById('out-note').value.trim();
+
+            if (!itemId || !qty || qty <= 0) {
+                showAlert('ຜິດພາດ', 'ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ ແລະ ຖືກຕ້ອງ', 'error');
+                return;
+            }
+
+            const itemIndex = items.findIndex(i => i.id === itemId);
+            if (itemIndex === -1) return;
+
+            const currentItem = items[itemIndex];
+
+            if (currentItem.balance < qty) {
+                showAlert('ເຄື່ອງໃນສາງບໍ່ພໍ', `ບໍ່ສາມາດເບີກໄດ້. ປັດຈຸບັນ ${currentItem.name} ມີໃນສາງພຽງ ${currentItem.balance} ເທົ່ານັ້ນ!`, 'error');
+                return;
+            }
+
+            const tx = {
+                id: `tx-${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                type: 'OUT',
+                itemCode: currentItem.code,
+                itemName: currentItem.name,
+                category: currentItem.category,
+                qty: qty,
+                note: note || 'ເບີກອຸປະກອນອອກ'
+            };
+
+            transactions.push(tx);
+            recalculateStock();
+            saveToStorage();
+
+            showAlert('ເບີກສຳເລັດ', `ເບີກ ${currentItem.name} ອອກຈາກສາງ ${qty} ສຳເລັດແລ້ວ`, 'success');
+
+            document.getElementById('form-stock-out').reset();
+            document.getElementById('out-item').disabled = true;
+            document.getElementById('out-code').value = '';
+            document.getElementById('out-available').value = '';
+            document.getElementById('out-available').className = "w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 text-sm focus:outline-none";
+
+            renderOutHistory();
+        }
+
+        function renderOutHistory() {
+            const container = document.getElementById('out-history-table');
+            container.innerHTML = '';
+
+            const outTx = transactions
+                .filter(tx => tx.type === 'OUT')
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            if (outTx.length === 0) {
+                container.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">ບໍ່ມີປະຫວັດການເບີກເຄື່ອງ</td></tr>`;
+                return;
+            }
+
+            outTx.forEach(tx => {
+                const date = new Date(tx.timestamp).toLocaleString('lo-LA');
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-4 font-medium text-slate-500">${date}</td>
+                    <td class="p-4 font-mono font-bold text-slate-600">${tx.itemCode}</td>
+                    <td class="p-4 font-bold text-slate-700">${tx.itemName} <span class="text-xs text-slate-400 block">${tx.category}</span></td>
+                    <td class="p-4 text-center text-rose-600 font-extrabold">-${tx.qty}</td>
+                    <td class="p-4 text-slate-500 max-w-[200px] truncate" title="${tx.note}">${tx.note}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex justify-center space-x-2">
+                            <button onclick="openEditTxModal('${tx.id}')" class="text-blue-500 hover:text-blue-700">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteTransaction('${tx.id}')" class="text-rose-500 hover:text-rose-700">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+
+        // --- 11. BUSINESS LOGIC: TRANSACTION EDITING & DELETION ---
+
+        function openEditTxModal(txId) {
+            const tx = transactions.find(t => t.id === txId);
+            if (!tx) return;
+
+            document.getElementById('edit-tx-id').value = tx.id;
+            document.getElementById('edit-tx-type').value = tx.type;
+            document.getElementById('edit-tx-title').textContent = `ແກ້ໄຂລາຍການ ${tx.type === 'IN' ? 'ນຳເຂົ້າ' : 'ເບີກ'}`;
+            document.getElementById('edit-tx-item-name').value = `${tx.itemName} [${tx.itemCode}]`;
+            document.getElementById('edit-tx-qty').value = tx.qty;
+            document.getElementById('edit-tx-note').value = tx.note || '';
+
+            document.getElementById('tx-edit-modal').classList.remove('hidden');
+        }
+
+        function closeEditTxModal() {
+            document.getElementById('tx-edit-modal').classList.add('hidden');
+        }
+
+        function saveTransactionEdit(e) {
+            e.preventDefault();
+
+            const txId = document.getElementById('edit-tx-id').value;
+            const newQty = parseInt(document.getElementById('edit-tx-qty').value);
+            const newNote = document.getElementById('edit-tx-note').value.trim();
+
+            if (!txId || isNaN(newQty) || newQty <= 0) {
+                showAlert('ຜິດພາດ', 'ກະລຸນາປ້ອນຈຳນວນທີ່ຖືກຕ້ອງ (> 0)', 'error');
+                return;
+            }
+
+            const tx = transactions.find(t => t.id === txId);
+            if (!tx) return;
+
+            const item = items.find(i => i.code === tx.itemCode);
+            if (!item) return;
+
+            if (tx.type === 'OUT') {
+                const availableWithoutThis = item.balance + tx.qty;
+                if (newQty > availableWithoutThis) {
+                    showAlert('ເຄື່ອງໃນສາງບໍ່ພໍ', `ບໍ່ສາມາດແກ້ໄຂໄດ້. ຈຳນວນເບີກໃໝ່ (${newQty}) ເກີນຈຳນວນທີ່ສາມາດເບີກໄດ້ (${availableWithoutThis})`, 'error');
+                    return;
+                }
+            } else if (tx.type === 'IN') {
+                const balanceWithoutThisIn = item.balance - tx.qty;
+                if (balanceWithoutThisIn + newQty < 0) {
+                    showAlert('ເຄື່ອງໃນສາງບໍ່ພໍ', `ບໍ່ສາມາດຫຼຸດຈຳນວນນຳເຂົ້າໄດ້ ເພາະຈະເຮັດໃຫ້ສະຕ໋ອກຄົງເຫຼືອຂອງ ${item.name} ຕິດລົບ!`, 'error');
+                    return;
+                }
+            }
+
+            tx.qty = newQty;
+            tx.note = newNote;
+
+            recalculateStock();
+            saveToStorage();
+
+            showAlert('ແກ້ໄຂສຳເລັດ', `ແກ້ໄຂລາຍການ ${tx.type === 'IN' ? 'ນຳເຂົ້າ' : 'ເບີກ'} ຂອງ ${tx.itemName} ຮຽບຮ້ອຍແລ້ວ`, 'success');
+
+            closeEditTxModal();
+
+            if (tx.type === 'IN') renderInHistory();
+            if (tx.type === 'OUT') renderOutHistory();
+        }
+
+        function deleteTransaction(txId) {
+            const tx = transactions.find(t => t.id === txId);
+            if (!tx) return;
+
+            showConfirmModal(
+                'ຢືນຢັນການລຶບລາຍການ',
+                `ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບປະຫວັດການ ${tx.type === 'IN' ? 'ນຳເຂົ້າ' : 'ເບີກ'} ຂອງ "${tx.itemName}" ຈຳນວນ ${tx.qty}?\n*ໝາຍເຫດ: ຍອດສະຕ໋ອກຈະຖືກຄິດໄລ່ຄືນໃໝ່.`,
+                'transaction',
+                txId
+            );
+        }
+
+
+        // --- 12. BUSINESS LOGIC: STOCK AUDIT (ກວດສະຕ໋ອກ) ---
+
+        function loadAuditPage() {
+            populateCategoryDropdown('audit-category');
+            renderAuditHistory();
+        }
+
+        function updateAuditItemDetails() {
+            const itemId = document.getElementById('audit-item').value;
+            const codeInput = document.getElementById('audit-code');
+            const sysQtyInput = document.getElementById('audit-system-qty');
+
+            if (!itemId) {
+                codeInput.value = '';
+                sysQtyInput.value = '';
+                return;
+            }
+
+            const item = items.find(i => i.id === itemId);
+            if (item) {
+                codeInput.value = item.code;
+                sysQtyInput.value = item.balance;
+            }
+        }
+
+        function handleStockAudit(e) {
+            e.preventDefault();
+
+            const itemId = document.getElementById('audit-item').value;
+            const actualQty = parseInt(document.getElementById('audit-actual-qty').value);
+            const user = document.getElementById('audit-user').value.trim();
+            const note = document.getElementById('audit-note').value.trim();
+
+            if (!itemId || actualQty === undefined || isNaN(actualQty) || actualQty < 0 || !user || !note) {
+                showAlert('ຜິດພາດ', 'ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ ພ້ອມທັງລະບຸເຫດຜົນການປັບປຸງ', 'error');
+                return;
+            }
+
+            const itemIndex = items.findIndex(i => i.id === itemId);
+            if (itemIndex === -1) return;
+
+            const item = items[itemIndex];
+            const systemQty = item.balance;
+            const diff = actualQty - systemQty;
+
+            if (diff === 0) {
+                showAlert('ບໍ່ມີການປ່ຽນແປງ', 'ຈຳນວນຕົວຈິງຕົງກັບຈຳນວນໃນລະບົບແລ້ວ ບໍ່ຈຳເປັນຕ້ອງປັບປຸງ', 'warning');
+                return;
+            }
+
+            const tx = {
+                id: `tx-${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                type: 'AUDIT',
+                itemCode: item.code,
+                itemName: item.name,
+                category: item.category,
+                qty: Math.abs(diff),
+                user: user,
+                note: note,
+                oldValue: systemQty,
+                newValue: actualQty
+            };
+
+            transactions.push(tx);
+            recalculateStock();
+            saveToStorage();
+
+            showAlert('ປັບປຸງສຳເລັດ', `ປັບປຸງສະຕ໋ອກ ${item.name} ເປັນ ${actualQty} ຊິ້ນສຳເລັດແລ້ວ (ຜົນຕ່າງ: ${diff})`, 'success');
+
+            document.getElementById('form-stock-audit').reset();
+            document.getElementById('audit-item').disabled = true;
+            document.getElementById('audit-code').value = '';
+            document.getElementById('audit-system-qty').value = '';
+
+            renderAuditHistory();
+        }
+
+        function renderAuditHistory() {
+            const container = document.getElementById('audit-history-table');
+            container.innerHTML = '';
+
+            const auditTx = transactions
+                .filter(tx => tx.type === 'AUDIT')
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            if (auditTx.length === 0) {
+                container.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">ບໍ່ມີປະຫວັດການປັບປຸງສະຕ໋ອກ</td></tr>`;
+                return;
+            }
+
+            auditTx.forEach(tx => {
+                const date = new Date(tx.timestamp).toLocaleString('lo-LA');
+                const diff = tx.newValue - tx.oldValue;
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50";
+                
+                let diffBadge = '';
+                if (diff > 0) {
+                    diffBadge = `<span class="text-emerald-600 font-bold">+${diff}</span>`;
+                } else {
+                    diffBadge = `<span class="text-rose-600 font-bold">${diff}</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-4 font-medium text-slate-500">${date}</td>
+                    <td class="p-4 font-mono font-bold text-slate-600">${tx.itemCode}</td>
+                    <td class="p-4 font-bold text-slate-700">${tx.itemName} <span class="text-xs text-slate-400 block">${tx.category}</span></td>
+                    <td class="p-4 text-center text-slate-600 font-semibold">${tx.oldValue}</td>
+                    <td class="p-4 text-center text-slate-800 font-extrabold bg-slate-50">${tx.newValue}</td>
+                    <td class="p-4 text-center">${diffBadge}</td>
+                    <td class="p-4 font-medium text-slate-600">${tx.user}</td>
+                    <td class="p-4 text-slate-500 max-w-[150px] truncate" title="${tx.note}">${tx.note}</td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+
+        // --- 13. BUSINESS LOGIC: EQUIPMENT CODES (ລະຫັດເຄື່ອງ) ---
+
+        let activeCodeCategory = '';
+
+        function loadCodesPage() {
+            renderCategoryTree();
+            renderCodesTable();
+        }
+
+        function renderCategoryTree() {
+            const container = document.getElementById('category-tree-list');
+            container.innerHTML = '';
+
+            const allLi = document.createElement('li');
+            allLi.innerHTML = `
+                <button onclick="setCodesCategory('')" class="w-full text-left px-3 py-1.5 rounded-lg text-sm font-medium transition ${activeCodeCategory === '' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}">
+                    <i class="fa-solid fa-folder-open mr-2 text-amber-500"></i> ທັງໝົດ (${items.length})
+                </button>
+            `;
+            container.appendChild(allLi);
+
+            categories.forEach(cat => {
+                const catCount = items.filter(i => i.category === cat).length;
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <button onclick="setCodesCategory('${cat}')" class="w-full text-left px-3 py-1.5 rounded-lg text-sm font-medium transition truncate flex justify-between items-center ${activeCodeCategory === cat ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}">
+                        <span class="truncate"><i class="fa-solid fa-folder mr-2 text-amber-500"></i> ${cat}</span>
+                        <span class="text-xs font-semibold bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full">${catCount}</span>
+                    </button>
+                `;
+                container.appendChild(li);
+            });
+        }
+
+        function setCodesCategory(cat) {
+            activeCodeCategory = cat;
+            renderCategoryTree();
+            renderCodesTable();
+        }
+
+        function renderCodesTable() {
+            const searchVal = document.getElementById('search-code-list').value.toLowerCase().trim();
+            const container = document.getElementById('codes-table-body');
+            container.innerHTML = '';
+
+            let filtered = items;
+
+            if (activeCodeCategory) {
+                filtered = filtered.filter(item => item.category === activeCodeCategory);
+            }
+
+            if (searchVal) {
+                filtered = filtered.filter(item => 
+                    item.name.toLowerCase().includes(searchVal) || 
+                    item.code.toLowerCase().includes(searchVal) || 
+                    item.category.toLowerCase().includes(searchVal)
+                );
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">ບໍ່ມີລາຍການອຸປະກອນ</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold text-blue-600 text-sm">${item.code}</td>
+                    <td class="p-3 font-semibold text-slate-700">${item.name}</td>
+                    <td class="p-3 text-slate-500 text-xs">${item.category}</td>
+                    <td class="p-3 text-center text-slate-700 font-medium">${item.minQty !== undefined ? item.minQty : 5} ຊິ້ນ</td>
+                    <td class="p-3 text-center">
+                        <div class="flex justify-center space-x-1">
+                            <button onclick="openEditDeviceModal('${item.id}')" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg" title="ແກ້ໄຂ">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteDevice('${item.id}')" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg" title="ລຶບ">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+        function filterCodes() {
+            renderCodesTable();
+        }
+
+
+        // --- 14. DEVICE MANAGEMENT (ADD, EDIT, DELETE) ---
+
+        function openAddDeviceModal() {
+            document.getElementById('form-device').reset();
+            document.getElementById('edit-device-id').value = '';
+            document.getElementById('modal-title').textContent = "ເພີ່ມອຸປະກອນໃໝ່";
+            document.getElementById('modal-item-min-qty').value = '';
+            
+            const select = document.getElementById('modal-category');
+            select.innerHTML = '<option value="">-- ເລືອກໝວດໝູ່ --</option>';
+            categories.forEach(cat => {
+                select.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+
+            document.getElementById('device-modal').classList.remove('hidden');
+        }
+
+        function openEditDeviceModal(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('modal-title').textContent = "ແກ້ໄຂອຸປະກອນ";
+            document.getElementById('edit-device-id').value = item.id;
+            document.getElementById('modal-item-name').value = item.name;
+            document.getElementById('modal-item-code').value = item.code;
+            document.getElementById('modal-item-min-qty').value = item.minQty !== undefined ? item.minQty : 5;
+
+            const select = document.getElementById('modal-category');
+            select.innerHTML = '';
+            categories.forEach(cat => {
+                const selected = cat === item.category ? 'selected' : '';
+                select.innerHTML += `<option value="${cat}" ${selected}>${cat}</option>`;
+            });
+
+            document.getElementById('device-modal').classList.remove('hidden');
+        }
+
+        function closeDeviceModal() {
+            document.getElementById('device-modal').classList.add('hidden');
+        }
+
+        function promptNewCategory() {
+            const catName = prompt("ກະລຸນາປ້ອນຊື່ໝວດໝູ່ໃໝ່:");
+            if (catName && catName.trim() !== "") {
+                const cleanCatName = catName.trim();
+                if (categories.includes(cleanCatName)) {
+                    alert("ມີໝວດໝູ່ນີ້ຢູ່ໃນລະບົບແລ້ວ!");
+                    return;
+                }
+                categories.push(cleanCatName);
+                saveToStorage();
+                
+                const select = document.getElementById('modal-category');
+                select.innerHTML += `<option value="${cleanCatName}" selected>${cleanCatName}</option>`;
+            }
+        }
+
+        function saveDevice(e) {
+            e.preventDefault();
+
+            const deviceId = document.getElementById('edit-device-id').value;
+            const category = document.getElementById('modal-category').value;
+            const name = document.getElementById('modal-item-name').value.trim();
+            let code = document.getElementById('modal-item-code').value.trim();
+            const minQtyInput = document.getElementById('modal-item-min-qty').value;
+            const minQty = minQtyInput !== '' ? parseInt(minQtyInput) : 5;
+
+            if (!category || !name) {
+                alert("ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ!");
+                return;
+            }
+
+            if (deviceId) {
+                const idx = items.findIndex(i => i.id === deviceId);
+                if (idx !== -1) {
+                    items[idx].category = category;
+                    items[idx].name = name;
+                    items[idx].code = code || items[idx].code;
+                    items[idx].minQty = minQty;
+                }
+                showAlert('ແກ້ໄຂຂໍ້ມູນສຳເລັດ', `ແກ້ໄຂຂໍ້ມູນອຸປະກອນຮຽບຮ້ອຍແລ້ວ`, 'success');
+            } else {
+                if (!code) {
+                    const prefix = getCategoryPrefix(category);
+                    const catCount = items.filter(i => i.category === category).length;
+                    code = `${prefix}-${100 + catCount + 1}`;
+                }
+
+                if (items.some(i => i.code === code)) {
+                    alert("ລະຫັດອຸປະກອນນີ້ມີຢູ່ໃນລະບົບແລ້ວ, ກະລຸນາກວດສອບຄືນ!");
+                    return;
+                }
+
+                const newItem = {
+                    id: `item-${Date.now()}`,
+                    code: code,
+                    name: name,
+                    category: category,
+                    initialQty: 0,
+                    stockIn: 0,
+                    stockOut: 0,
+                    audited: 0,
+                    balance: 0,
+                    minQty: minQty
+                };
+
+                items.push(newItem);
+                showAlert('ເພີ່ມອຸປະກອນໃໝ່', `ເພີ່ມ ${name} ພາຍໃຕ້ລະຫັດ ${code} ເຂົ້າໃນລະບົບແລ້ວ`, 'success');
+            }
+
+            recalculateStock();
+            saveToStorage();
+            closeDeviceModal();
+            loadCodesPage();
+        }
+
+        function deleteDevice(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            showConfirmModal(
+                'ຢືນຢັນການລຶບອຸປະກອນ',
+                `ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບອຸປະກອນ "${item.name}" (${item.code})?\n*ໝາຍເຫດ: ຂໍ້ມູນປະຫວັດສະຕ໋ອກທັງໝົດທີ່ກ່ຽວຂ້ອງຈະຖືກລຶບອອກ!`,
+                'device',
+                id
+            );
+        }
+
+
+        // --- 15. INITIAL LOAD ---
+        window.onload = function() {
+            initializeData();
+            renderNavigation();
+            switchTab('dashboard'); 
+        };
+
+    </script>
+</body>
+</html>
