@@ -623,7 +623,7 @@
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">ໝວດໝູ່</label>
                     <div class="flex gap-2">
-                        <select id="modal-category" class="flex-grow px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
+                        <select id="modal-category" onchange="previewNextProductCode()" class="flex-grow px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
                             <!-- Dynamic loading -->
                         </select>
                         <button type="button" onclick="promptNewCategory()" class="px-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-slate-600 text-xs font-semibold" title="ສ້າງໝວດໝູ່ໃໝ່">
@@ -636,8 +636,13 @@
                     <input type="text" id="modal-item-name" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required placeholder="ຕົວຢ່າງ: ສີແດງ ຫຼື 914">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">ກຳນົດລະຫັດເອງ (ທາງເລືອກ)</label>
-                    <input type="text" id="modal-item-code" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="ລະບົບຈະສ້າງໃຫ້ອັດຕະໂນມັດຖ້າວ່າງໄວ້">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ລະຫັດສິນຄ້າ</label>
+                    <div class="flex gap-2 mb-2">
+                        <button type="button" id="code-mode-auto" onclick="setProductCodeMode('auto')" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium">AUTO</button>
+                        <button type="button" id="code-mode-manual" onclick="setProductCodeMode('manual')" class="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 text-xs font-medium">ປ້ອນເອງ</button>
+                    </div>
+                    <input type="text" id="modal-item-code" oninput="sanitizeManualProductCode(this)" class="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-100 text-slate-700 text-sm font-mono" placeholder="ຕົວຢ່າງ: STFN-000001" readonly>
+                    <p id="code-mode-help" class="mt-1 text-xs text-slate-500">AUTO: ລະບົບສ້າງ Prefix ຕາມປະເພດ + ຕົວເລກ 6 ຫຼັກ.</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">ຫົວໜ່ວຍ</label>
@@ -888,7 +893,76 @@
             };
             
             if (map[categoryName]) return map[categoryName];
-            return categoryName.substring(0, 3).toUpperCase();
+            let hash = 0;
+            const text = String(categoryName || '');
+            for (let i = 0; i < text.length; i++) hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+            return `CAT${String(Math.abs(hash) % 1000).padStart(3, '0')}`;
+        }
+
+        function generateNextProductCode(categoryName) {
+            const prefix = getCategoryPrefix(categoryName);
+            let maxSeq = 0;
+            items.forEach(item => {
+                if (item.category !== categoryName) return;
+                const match = String(item.code || '').toUpperCase().match(new RegExp('^' + prefix + '-(\\d{6,})$'));
+                if (match) maxSeq = Math.max(maxSeq, parseInt(match[1], 10) || 0);
+            });
+            let next = maxSeq + 1, code;
+            do {
+                code = `${prefix}-${String(next).padStart(6, '0')}`;
+                next++;
+            } while (items.some(item => String(item.code).toUpperCase() === code.toUpperCase()));
+            return code;
+        }
+
+        let productCodeMode = 'auto';
+
+        function setProductCodeMode(mode) {
+            productCodeMode = mode === 'manual' ? 'manual' : 'auto';
+            const codeEl = document.getElementById('modal-item-code');
+            const autoBtn = document.getElementById('code-mode-auto');
+            const manualBtn = document.getElementById('code-mode-manual');
+            const help = document.getElementById('code-mode-help');
+            const editing = !!document.getElementById('edit-device-id').value;
+
+            if (editing) {
+                codeEl.readOnly = true;
+                return;
+            }
+
+            if (productCodeMode === 'auto') {
+                codeEl.readOnly = true;
+                codeEl.classList.add('bg-slate-100');
+                autoBtn.className = 'px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium';
+                manualBtn.className = 'px-3 py-2 rounded-lg bg-slate-200 text-slate-700 text-xs font-medium';
+                help.textContent = 'AUTO: ລະບົບສ້າງ Prefix ຕາມປະເພດ + ຕົວເລກ 6 ຫຼັກ.';
+                previewNextProductCode();
+            } else {
+                codeEl.readOnly = false;
+                codeEl.classList.remove('bg-slate-100');
+                codeEl.value = '';
+                autoBtn.className = 'px-3 py-2 rounded-lg bg-slate-200 text-slate-700 text-xs font-medium';
+                manualBtn.className = 'px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium';
+                help.textContent = 'ປ້ອນເອງ: ໃຊ້ A-Z, 0-9 ແລະ -; ສ່ວນຕົວເລກຕ້ອງມີຢ່າງນ້ອຍ 6 ຫຼັກ.';
+                codeEl.focus();
+            }
+        }
+
+        function sanitizeManualProductCode(el) {
+            if (productCodeMode !== 'manual') return;
+            el.value = String(el.value || '').toUpperCase().replace(/[^A-Z0-9-]/g, '');
+        }
+
+        function isValidManualProductCode(code) {
+            // ASCII letters/numbers/hyphen only, and at least six digits total.
+            return /^[A-Z0-9-]+$/.test(code) && (code.match(/\d/g) || []).length >= 6;
+        }
+
+        function previewNextProductCode() {
+            if (productCodeMode !== 'auto') return;
+            if (document.getElementById('edit-device-id').value) return;
+            const category = document.getElementById('modal-category').value;
+            document.getElementById('modal-item-code').value = category ? generateNextProductCode(category) : '';
         }
 
         // Centralized Stock Recalculation Engine
@@ -2213,6 +2287,7 @@ function backupToSheets(itemsList, transactionsList) {
             });
 
             document.getElementById('device-modal').classList.remove('hidden');
+            setProductCodeMode('auto');
         }
 
         function openEditDeviceModal(id) {
@@ -2222,7 +2297,9 @@ function backupToSheets(itemsList, transactionsList) {
             document.getElementById('modal-title').textContent = "ແກ້ໄຂອຸປະກອນ";
             document.getElementById('edit-device-id').value = item.id;
             document.getElementById('modal-item-name').value = item.name;
+            productCodeMode = 'manual';
             document.getElementById('modal-item-code').value = item.code;
+            document.getElementById('modal-item-code').readOnly = true;
             document.getElementById('modal-item-min-qty').value = item.minQty !== undefined ? item.minQty : 5;
             document.getElementById('modal-item-unit').value = item.unit || 'ຊິ້ນ';
 
@@ -2253,6 +2330,7 @@ function backupToSheets(itemsList, transactionsList) {
                 
                 const select = document.getElementById('modal-category');
                 select.innerHTML += `<option value="${cleanCatName}" selected>${cleanCatName}</option>`;
+                previewNextProductCode();
             }
         }
 
@@ -2277,19 +2355,23 @@ function backupToSheets(itemsList, transactionsList) {
                 if (idx !== -1) {
                     items[idx].category = category;
                     items[idx].name = name;
-                    items[idx].code = code || items[idx].code;
+                    items[idx].code = items[idx].code;
                     items[idx].minQty = minQty;
                     items[idx].unit = unit;
                 }
                 showAlert('ແກ້ໄຂຂໍ້ມູນສຳເລັດ', `ແກ້ໄຂຂໍ້ມູນອຸປະກອນຮຽບຮ້ອຍແລ້ວ`, 'success');
             } else {
-                if (!code) {
-                    const prefix = getCategoryPrefix(category);
-                    const catCount = items.filter(i => i.category === category).length;
-                    code = `${prefix}-${100 + catCount + 1}`;
+                if (productCodeMode === 'auto') {
+                    code = generateNextProductCode(category);
+                } else {
+                    code = String(code || '').trim().toUpperCase();
+                    if (!isValidManualProductCode(code)) {
+                        showToast('ລະຫັດທີ່ປ້ອນເອງຕ້ອງໃຊ້ A-Z, 0-9, - ແລະມີຕົວເລກຢ່າງນ້ອຍ 6 ຫຼັກ', 'error');
+                        return;
+                    }
                 }
 
-                if (items.some(i => i.code === code)) {
+                if (items.some(i => String(i.code).toUpperCase() === code.toUpperCase())) {
                     alert("ລະຫັດອຸປະກອນນີ້ມີຢູ່ໃນລະບົບແລ້ວ, ກະລຸນາກວດສອບຄືນ!");
                     return;
                 }
