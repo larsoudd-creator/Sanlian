@@ -1055,7 +1055,7 @@
                     method: 'POST',
                     mode: 'no-cors', 
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'text/plain;charset=utf-8',
                     },
                     body: JSON.stringify(payload)
                 });
@@ -2338,6 +2338,31 @@ function backupToSheets(itemsList, transactionsList) {
             switchTab('dashboard'); 
         };
 
-    </script>
+    
+        function normalizeCloudData(data) {
+            if (!data || data.status !== 'success') return data;
+            data.categories = Array.isArray(data.categories) ? data.categories : [];
+            data.transactions = Array.isArray(data.transactions) ? data.transactions : [];
+            data.items = Array.isArray(data.items) ? data.items.map(item => {
+                const initialQty = Number(item.initialQty || 0);
+                const stockIn = Number(item.stockIn || 0);
+                const stockOut = Number(item.stockOut || 0);
+                const audited = Number(item.audited || 0);
+                const calculated = initialQty + stockIn - stockOut + audited;
+                return {
+                    ...item,
+                    initialQty,
+                    stockIn,
+                    stockOut,
+                    audited,
+                    balance: item.balance !== undefined ? Number(item.balance) : calculated,
+                    minQty: item.minQty !== undefined ? Number(item.minQty) : 5,
+                    unit: item.unit || 'ຊິ້ນ'
+                };
+            }) : [];
+            return data;
+        }
+
+</script>
 </body>
 </html>
