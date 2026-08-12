@@ -27,8 +27,30 @@
             #section-stock > div { box-shadow: none !important; border: 0 !important; padding: 0 !important; }
             #section-stock .print-hide { display: none !important; }
             #stock-table-body tr { break-inside: avoid; }
-            table { font-size: 10px !important; }
-            th, td { padding: 6px !important; }
+
+            /* Print only: remove Code, Unit, cumulative IN and cumulative OUT columns.
+               Keep: Item name, Category, Stock balance, Status. */
+            #section-stock table th:nth-child(1),
+            #section-stock table td:nth-child(1),
+            #section-stock table th:nth-child(4),
+            #section-stock table td:nth-child(4),
+            #section-stock table th:nth-child(5),
+            #section-stock table td:nth-child(5),
+            #section-stock table th:nth-child(6),
+            #section-stock table td:nth-child(6) {
+                display: none !important;
+            }
+
+            #section-stock table { width: 100% !important; font-size: 11px !important; }
+            #section-stock th, #section-stock td { padding: 7px !important; }
+            #section-stock table th:nth-child(2),
+            #section-stock table td:nth-child(2) { width: 38% !important; }
+            #section-stock table th:nth-child(3),
+            #section-stock table td:nth-child(3) { width: 27% !important; }
+            #section-stock table th:nth-child(7),
+            #section-stock table td:nth-child(7) { width: 17% !important; text-align: center !important; }
+            #section-stock table th:nth-child(8),
+            #section-stock table td:nth-child(8) { width: 18% !important; text-align: center !important; }
         }
         /* Custom scrollbar */
         ::-webkit-scrollbar {
@@ -782,89 +804,25 @@
 
         // Generate Initials / Categories Map
         function initializeData() {
+            // Fresh local start: do not preload demo/sample inventory.
             const savedItems = storage.get('inv_items');
             const savedTx = storage.get('inv_transactions');
             const savedCategories = storage.get('inv_categories');
             cloudApiUrl = storage.get('inv_cloud_url') || '';
 
-            if (savedItems && savedTx && savedCategories) {
-                items = savedItems;
-                transactions = savedTx;
-                categories = savedCategories;
+            items = Array.isArray(savedItems) ? savedItems : [];
+            transactions = Array.isArray(savedTx) ? savedTx : [];
+            categories = Array.isArray(savedCategories) ? savedCategories : [];
 
-                // --- AUTO MIGRATION (ແກ້ໄຂບັນຫາຍອດເລີ່ມຕົ້ນຄ້າງ 10 ຊິ້ນໃຫ້ເປັນ 0 ອັດຕະໂນມັດ ແລະ ຮັບປະກັນວ່າມີ minQty) ---
-                let isMigrated = false;
-                items.forEach(item => {
-                    if (item.initialQty === 10) {
-                        item.initialQty = 0; 
-                        isMigrated = true;
-                    }
-                    if (item.minQty === undefined) {
-                        item.minQty = 5;
-                        isMigrated = true;
-                    }
-                    if (!item.unit) {
-                        item.unit = 'ຊິ້ນ';
-                        isMigrated = true;
-                    }
-                });
-
-                if (isMigrated) {
-                    recalculateStock();
-                    saveToStorage();
-                }
-            } else {
-                categories = Object.keys(initialRawData);
-                let idCounter = 1000;
-                
-                categories.forEach((cat, catIdx) => {
-                    const prefix = getCategoryPrefix(cat);
-                    initialRawData[cat].forEach((name, itemIdx) => {
-                        const itemCode = `${prefix}-${100 + itemIdx}`;
-                        items.push({
-                            id: `item-${idCounter++}`,
-                            code: itemCode,
-                            name: name,
-                            category: cat,
-                            initialQty: 0, 
-                            stockIn: 0,
-                            stockOut: 0,
-                            audited: 0,
-                            balance: 0,
-                            minQty: 5,
-                            unit: 'ຊິ້ນ'
-                        });
-                    });
-                });
-
-                // Set initial default transactions for history look
-                items.slice(0, 5).forEach((item, index) => {
-                    transactions.push({
-                        id: `tx-${Date.now()}-${index}`,
-                        timestamp: new Date(Date.now() - index * 3600000 * 2).toISOString(),
-                        type: 'IN', 
-                        itemCode: item.code,
-                        itemName: item.name,
-                        category: item.category,
-                        qty: 10,
-                        note: "ນຳເຂົ້າຕັ້ງຕົ້ນລະບົບ"
-                    });
-                });
-
-                recalculateStock();
-                saveToStorage();
-            }
-
-            // Sync with Google Sheet immediately if URL is configured
+            // If a saved Google Apps Script URL exists, pull the current cloud state immediately.
             if (cloudApiUrl) {
                 document.getElementById('cloud-api-url').value = cloudApiUrl;
                 updateCloudStatusBanner('connecting');
-                testAndSyncCloud(true); // silent sync on launch
+                testAndSyncCloud(true);
             } else {
                 updateCloudStatusBanner('offline');
             }
 
-            // Load Google Apps Script Template
             loadGoogleAppsScriptTemplate();
         }
 
@@ -1061,23 +1019,17 @@
                 const cloudData = await response.json();
                 
                 if (cloudData.status === 'success') {
-                    // Extract items and transactions
-                    if (cloudData.items && cloudData.items.length > 0) {
-                        items = cloudData.items;
+                    // Cloud is the source of truth when Sync is pressed.
+                    // Replace local state completely, including valid empty arrays.
+                    items = Array.isArray(cloudData.items) ? cloudData.items : [];
+                    transactions = Array.isArray(cloudData.transactions) ? cloudData.transactions : [];
+                    categories = Array.isArray(cloudData.categories) ? cloudData.categories : [];
 
-                        // --- MIGRATION CHECK FOR INCOMING CLOUD DATA ---
-                        items.forEach(item => {
-                            if (item.initialQty === 10) item.initialQty = 0;
-                            if (item.minQty === undefined) item.minQty = 5;
-                            if (!item.unit) item.unit = 'ຊິ້ນ';
-                        });
-                    }
-                    if (cloudData.transactions && cloudData.transactions.length > 0) {
-                        transactions = cloudData.transactions;
-                    }
-                    if (cloudData.categories && cloudData.categories.length > 0) {
-                        categories = cloudData.categories;
-                    }
+                    items.forEach(item => {
+                        if (item.initialQty === 10) item.initialQty = 0;
+                        if (item.minQty === undefined) item.minQty = 5;
+                        if (!item.unit) item.unit = 'ຊິ້ນ';
+                    });
 
                     cloudApiUrl = url;
                     recalculateStock();
@@ -1091,8 +1043,8 @@
                     updateCloudStatusBanner('connected');
                     if (!silent) showAlert('ຊິງຄ໌ຂໍ້ມູນສຳເລັດ', 'ດຶງຂໍ້ມູນຫຼ້າສຸດຈາກ Google Sheet ສຳເລັດແລ້ວ!', 'success');
                     
-                    // Force push cleaned balance back to Sheets
-                    pushDataToCloud();
+                    // Do NOT push during a pull/sync operation.
+                    // This prevents stale local/demo data from overwriting Google Sheets.
 
                     // Refresh views
                     switchTab('dashboard');
