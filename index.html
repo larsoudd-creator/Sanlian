@@ -990,74 +990,142 @@
                 if (label) { label.textContent = "Online (ເຊື່ອມຕໍ່ Google Sheet ແລ້ວ)"; }
             } else if (status === 'error') {
                 banner.className = "mb-6 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-between text-rose-800 text-sm";
-                text.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-500 mr-2"></i> <b>ການເຊື່ອມຕໍ່ຜິດພາດ:</b> ບໍ່ສາມາດເຊື່ອມຕໍ່ກັບ Google API Web App ໄດ້. ກະລຸນາກວດສອບ URL ອີກຄັ້ງ.`;
+                text.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-500 mr-2"></i> <b>Cloud ຂາດການເຊື່ອມຕໍ່:</b> ຂໍ້ມູນທີ່ກຳລັງສະແດງອາດເປັນ Cache ໃນເຄື່ອງ. ລະບົບຈະລອງໃໝ່ເມື່ອກົດຊິງຄ໌.`;
                 if (indicator) { indicator.className = "h-3 w-3 rounded-full bg-rose-500"; }
                 if (label) { label.textContent = "ການເຊື່ອມຕໍ່ຜິດພາດ!"; }
             }
         }
 
         // Test Connection & Pull Data
+        let cloudSyncInProgress = false;
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function fetchCloudWithRetry(url, maxAttempts = 3) {
+            let lastError = null;
+
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                try {
+                    // Cache-buster prevents stale intermediary/browser responses.
+                    const sep = url.includes('?') ? '&' : '?';
+                    const readUrl = `${url}${sep}action=read&_=${Date.now()}_${attempt}`;
+
+                    const response = await fetch(readUrl, {
+                        method: 'GET',
+                        cache: 'no-store',
+                        redirect: 'follow',
+                        signal: controller.signal
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                    const text = await response.text();
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (_) {
+                        throw new Error('Invalid JSON response');
+                    }
+
+                    if (!data || data.status !== 'success') {
+                        throw new Error((data && data.message) || 'Cloud status is not success');
+                    }
+
+                    clearTimeout(timeoutId);
+                    return data;
+                } catch (err) {
+                    clearTimeout(timeoutId);
+                    lastError = err;
+                    if (attempt < maxAttempts) {
+                        await sleep(1000 * attempt);
+                    }
+                }
+            }
+
+            throw lastError || new Error('Cloud connection failed');
+        }
+
+        // Stable Cloud Sync: Google Sheet is source of truth; LocalStorage is cache only.
         async function testAndSyncCloud(silent = false) {
-            const url = document.getElementById('cloud-api-url').value.trim();
+            const urlInput = document.getElementById('cloud-api-url');
+            const url = (urlInput ? urlInput.value : cloudApiUrl || '').trim();
+
             if (!url) {
                 if (!silent) showAlert('ຂໍ້ຜິດພາດ', 'ກະລຸນາປ້ອນ URL ຂອງ Google Web App ກ່ອນ!', 'error');
                 return;
             }
 
-            if (!silent) {
-                document.getElementById('btn-sync-now').disabled = true;
-                document.getElementById('btn-sync-now').innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> ກຳລັງຊິງຄ໌...`;
+            // Prevent overlapping sync requests.
+            if (cloudSyncInProgress) {
+                if (!silent) showAlert('ກຳລັງຊິງຄ໌', 'ກະລຸນາລໍຖ້າການຊິງຄ໌ປະຈຸບັນໃຫ້ສຳເລັດກ່ອນ.', 'info');
+                return;
             }
-            
+
+            cloudSyncInProgress = true;
+            const btn = document.getElementById('btn-sync-now');
+
+            if (!silent && btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> ກຳລັງຊິງຄ໌...`;
+            }
+
             updateCloudStatusBanner('connecting');
 
             try {
-                // Fetch request with timeout guard
-                const response = await fetch(`${url}?action=read`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const cloudData = await response.json();
-                
-                if (cloudData.status === 'success') {
-                    // Cloud is the source of truth when Sync is pressed.
-                    // Replace local state completely, including valid empty arrays.
-                    items = Array.isArray(cloudData.items) ? cloudData.items : [];
-                    transactions = Array.isArray(cloudData.transactions) ? cloudData.transactions : [];
-                    categories = Array.isArray(cloudData.categories) ? cloudData.categories : [];
+                const cloudData = await fetchCloudWithRetry(url, 3);
 
-                    items.forEach(item => {
-                        if (item.initialQty === 10) item.initialQty = 0;
-                        if (item.minQty === undefined) item.minQty = 5;
-                        if (!item.unit) item.unit = 'ຊິ້ນ';
-                    });
+                // Cloud completely replaces local cache, even when arrays are empty.
+                items = Array.isArray(cloudData.items) ? cloudData.items : [];
+                transactions = Array.isArray(cloudData.transactions) ? cloudData.transactions : [];
+                categories = Array.isArray(cloudData.categories) ? cloudData.categories : [];
 
-                    cloudApiUrl = url;
-                    recalculateStock();
-                    
-                    // Save to local storage cache
-                    storage.set('inv_items', items);
-                    storage.set('inv_transactions', transactions);
-                    storage.set('inv_categories', categories);
-                    storage.set('inv_cloud_url', cloudApiUrl);
+                items.forEach(item => {
+                    if (item.initialQty === 10) item.initialQty = 0;
+                    if (item.minQty === undefined) item.minQty = 5;
+                    if (!item.unit) item.unit = 'ຊິ້ນ';
+                });
 
-                    updateCloudStatusBanner('connected');
-                    if (!silent) showAlert('ຊິງຄ໌ຂໍ້ມູນສຳເລັດ', 'ດຶງຂໍ້ມູນຫຼ້າສຸດຈາກ Google Sheet ສຳເລັດແລ້ວ!', 'success');
-                    
-                    // Do NOT push during a pull/sync operation.
-                    // This prevents stale local/demo data from overwriting Google Sheets.
+                cloudApiUrl = url;
+                recalculateStock();
 
-                    // Refresh views
-                    switchTab('dashboard');
-                } else {
-                    throw new Error('Cloud returned empty/failed status');
+                // LocalStorage is cache only.
+                storage.set('inv_items', items);
+                storage.set('inv_transactions', transactions);
+                storage.set('inv_categories', categories);
+                storage.set('inv_cloud_url', cloudApiUrl);
+
+                updateCloudStatusBanner('connected');
+                switchTab('dashboard');
+
+                if (!silent) {
+                    showAlert(
+                        'ຊິງຄ໌ຂໍ້ມູນສຳເລັດ',
+                        `ດຶງຂໍ້ມູນປັດຈຸບັນຈາກ Google Sheet ສຳເລັດ: ${items.length} ລາຍການ.`,
+                        'success'
+                    );
                 }
             } catch (error) {
-                console.error("Cloud Sync Error: ", error);
+                console.error('Cloud Sync Error:', error);
+
+                // Keep cached data visible during a temporary network failure,
+                // but clearly mark it as cache rather than successful cloud data.
                 updateCloudStatusBanner('error');
-                if (!silent) showAlert('ເຊື່ອມຕໍ່ບໍ່ສຳເລັດ', 'ກະລຸນາກວດສອບ Web App URL ຂອງ Google Script ໃຫ້ຖືກຕ້ອງ ແລະ ໃຫ້ແນ່ໃຈວ່າໄດ້ Deploy ເປັນ "Anyone" ແລ້ວ.', 'error');
-            } finally {
+
                 if (!silent) {
-                    const btn = document.getElementById('btn-sync-now');
+                    showAlert(
+                        'ຊິງຄ໌ບໍ່ສຳເລັດ',
+                        'ລະບົບລອງເຊື່ອມຕໍ່ 3 ຄັ້ງແລ້ວ. ຂໍ້ມູນທີ່ເຫັນຕອນນີ້ແມ່ນ Cache ໃນເຄື່ອງ; ກະລຸນາກວດ Internet ແລ້ວກົດຊິງຄ໌ອີກຄັ້ງ.',
+                        'error'
+                    );
+                }
+            } finally {
+                cloudSyncInProgress = false;
+                if (!silent && btn) {
                     btn.disabled = false;
                     btn.innerHTML = `<i class="fa-solid fa-rotate"></i> ຊິງຄ໌ຂໍ້ມູນທັນທີ`;
                 }
