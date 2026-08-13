@@ -71,13 +71,16 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
+    
+
+
     <!-- Header / Navigation -->
     <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center space-x-3">
-                    <div class="bg-white text-blue-600 p-2 rounded-lg shadow-inner">
-                        <i class="fa-solid fa-boxes-stacked text-xl"></i>
+                    <div class="bg-white w-11 h-11 p-1 rounded-lg shadow-inner flex items-center justify-center overflow-hidden">
+                        <img src="logo.png" alt="Logo" class="w-full h-full object-contain">
                     </div>
                     <div>
                         <h1 class="text-lg font-bold leading-none">ລະບົບຈັດເກັບອຸປະກອນ</h1>
@@ -548,6 +551,7 @@
                                         <th class="p-3">ຊື່ອຸປະກອນ</th>
                                         <th class="p-3">ໝວດໝູ່</th>
                                         <th class="p-3 text-center">ຈຸດເຕືອນສະຕ໋ອກຕໍ່າ</th>
+                                        <th class="p-3">ໝາຍເຫດ</th>
                                         <th class="p-3 text-center">ຈັດການ</th>
                                     </tr>
                                 </thead>
@@ -674,6 +678,10 @@
                     <label class="block text-sm font-medium text-slate-700 mb-1">ຈຸດເຕືອນສະຕ໋ອກຕໍ່າ (ຊິ້ນ)</label>
                     <input type="number" id="modal-item-min-qty" min="0" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="ຄ່າເລີ່ມຕົ້ນແມ່ນ 5">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ໝາຍເຫດ</label>
+                    <textarea id="modal-item-note" rows="3" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-y" placeholder="ປ້ອນໝາຍເຫດເພີ່ມເຕີມ..."></textarea>
+                </div>
                 <div class="flex justify-end space-x-2 pt-4">
                     <button type="button" onclick="closeDeviceModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition duration-150">ຍົກເລີກ</button>
                     <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition duration-150 shadow-sm">ບັນທຶກ</button>
@@ -790,7 +798,7 @@
         let categories = [];
         let items = []; 
         let transactions = []; 
-        let cloudApiUrl = ''; 
+        let cloudApiUrl = 'https://script.google.com/macros/s/AKfycbzYpwXDL2jTucpLCgIT2o-TEfmdwCq58Vj6GOV96qtbtZ9XZtaqp_gx9EAV4GjOAjH3/exec'; 
 
         // Persistent LocalStorage Helpers
         const storage = {
@@ -808,7 +816,8 @@
             const savedItems = storage.get('inv_items');
             const savedTx = storage.get('inv_transactions');
             const savedCategories = storage.get('inv_categories');
-            cloudApiUrl = storage.get('inv_cloud_url') || '';
+            cloudApiUrl = 'https://script.google.com/macros/s/AKfycbzYpwXDL2jTucpLCgIT2o-TEfmdwCq58Vj6GOV96qtbtZ9XZtaqp_gx9EAV4GjOAjH3/exec';
+            storage.set('inv_cloud_url', cloudApiUrl);
 
             items = Array.isArray(savedItems) ? savedItems : [];
             transactions = Array.isArray(savedTx) ? savedTx : [];
@@ -2195,7 +2204,7 @@ function backupToSheets(itemsList, transactionsList) {
             }
 
             if (filtered.length === 0) {
-                container.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">ບໍ່ມີລາຍການອຸປະກອນ</td></tr>`;
+                container.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 font-medium">ບໍ່ມີລາຍການອຸປະກອນ</td></tr>`;
                 return;
             }
 
@@ -2207,6 +2216,7 @@ function backupToSheets(itemsList, transactionsList) {
                     <td class="p-3 font-semibold text-slate-700">${item.name}</td>
                     <td class="p-3 text-slate-500 text-xs">${item.category}</td>
                     <td class="p-3 text-center text-slate-700 font-medium">${item.minQty !== undefined ? item.minQty : 5} ຊິ້ນ</td>
+                    <td class="p-3 text-slate-600 max-w-[260px] whitespace-normal break-words">${item.note ? item.note : '-'}</td>
                     <td class="p-3 text-center">
                         <div class="flex justify-center space-x-1">
                             <button onclick="openEditDeviceModal('${item.id}')" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg" title="ແກ້ໄຂ">
@@ -2298,6 +2308,7 @@ function backupToSheets(itemsList, transactionsList) {
             document.getElementById('edit-device-id').value = '';
             document.getElementById('modal-title').textContent = "ເພີ່ມອຸປະກອນໃໝ່";
             document.getElementById('modal-item-min-qty').value = '';
+            document.getElementById('modal-item-note').value = '';
             document.getElementById('modal-item-unit').value = 'ຊິ້ນ';
             
             const select = document.getElementById('modal-category');
@@ -2322,6 +2333,7 @@ function backupToSheets(itemsList, transactionsList) {
             document.getElementById('modal-item-code').readOnly = true;
             document.getElementById('modal-item-min-qty').value = item.minQty !== undefined ? item.minQty : 5;
             document.getElementById('modal-item-unit').value = item.unit || 'ຊິ້ນ';
+            document.getElementById('modal-item-note').value = item.note || '';
 
             const select = document.getElementById('modal-category');
             select.innerHTML = '';
@@ -2464,7 +2476,125 @@ function backupToSheets(itemsList, transactionsList) {
             }) : [];
             return data;
         }
+let employeeUsers = [];
+
+        async function employeeApi(action, payload = {}) {
+            const url = (cloudApiUrl || storage.get('inv_cloud_url') || '').trim();
+            if (!url) throw new Error('Cloud API URL not configured');
+            const params = new URLSearchParams({action, ...payload, _: Date.now()});
+            const response = await fetch(`${url}?${params.toString()}`, {cache:'no-store', redirect:'follow'});
+            const raw = await response.text();
+            let data;
+            try { data = JSON.parse(raw); } catch (_) { throw new Error('API response is not JSON'); }
+            if (!data || data.status !== 'success') throw new Error((data && data.message) || 'API error');
+            return data;
+        }
+
+        async function openEmployeeManager() {
+            document.getElementById('employee-modal').classList.remove('hidden');
+            resetEmployeeForm();
+            await loadEmployees();
+        }
+        function closeEmployeeManager(){ document.getElementById('employee-modal').classList.add('hidden'); }
+        function resetEmployeeForm(){
+            document.getElementById('employee-form').reset();
+            document.getElementById('emp-original-username').value='';
+            document.getElementById('emp-active').value='true';
+            document.getElementById('emp-role').value='user';
+        }
+        async function loadEmployees(){
+            try {
+                const data = await employeeApi('users');
+                employeeUsers = data.users || [];
+                const body = document.getElementById('employee-table-body');
+                body.innerHTML = employeeUsers.map((u,i)=>`
+                  <tr class="border-t">
+                    <td class="p-3">${u.employeeCode||''}</td><td class="p-3">${u.name||''}</td><td class="p-3 font-mono">${u.username||''}</td>
+                    <td class="p-3">${u.department||''}${u.position ? ' / '+u.position : ''}</td><td class="p-3">${u.phone||''}</td>
+                    <td class="p-3 text-center">${u.role||'user'}</td><td class="p-3 text-center">${String(u.active)==='true'||u.active===true?'ໃຊ້ງານ':'ປິດ'}</td>
+                    <td class="p-3 text-center"><button onclick="editEmployee(${i})" class="text-blue-600 mr-3"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="toggleEmployee(${i})" class="text-amber-600"><i class="fa-solid fa-power-off"></i></button></td>
+                  </tr>`).join('') || `<tr><td colspan="8" class="p-6 text-center text-slate-400">ຍັງບໍ່ມີພະນັກງານ</td></tr>`;
+            } catch(e){ showAlert('ຜິດພາດ', e.message, 'error'); }
+        }
+        function editEmployee(i){
+            const u=employeeUsers[i]; if(!u)return;
+            document.getElementById('emp-original-username').value=u.username||'';
+            document.getElementById('emp-code').value=u.employeeCode||'';
+            document.getElementById('emp-name').value=u.name||'';
+            document.getElementById('emp-username').value=u.username||'';
+            document.getElementById('emp-password').value='';
+            document.getElementById('emp-department').value=u.department||'';
+            document.getElementById('emp-position').value=u.position||'';
+            document.getElementById('emp-phone').value=u.phone||'';
+            document.getElementById('emp-role').value=u.role||'user';
+            document.getElementById('emp-active').value=String(u.active===true||String(u.active).toLowerCase()==='true');
+        }
+        async function saveEmployee(ev){
+            ev.preventDefault();
+            const original=document.getElementById('emp-original-username').value.trim();
+            const password=document.getElementById('emp-password').value;
+            if(!original && password.length<8){ showAlert('ກວດຂໍ້ມູນ','ພະນັກງານໃໝ່ຕ້ອງມີ Password ຢ່າງນ້ອຍ 8 ຕົວ','error'); return; }
+            const payload={
+              originalUsername:original, employeeCode:document.getElementById('emp-code').value.trim(),
+              name:document.getElementById('emp-name').value.trim(), username:document.getElementById('emp-username').value.trim(),
+              password, department:document.getElementById('emp-department').value.trim(),
+              position:document.getElementById('emp-position').value.trim(), phone:document.getElementById('emp-phone').value.trim(),
+              role:document.getElementById('emp-role').value, active:document.getElementById('emp-active').value
+            };
+            try { await employeeApi('saveuser',payload); showAlert('ສຳເລັດ','ບັນທຶກພະນັກງານແລ້ວ','success'); resetEmployeeForm(); await loadEmployees(); }
+            catch(e){ showAlert('ຜິດພາດ',e.message,'error'); }
+        }
+        async function toggleEmployee(i){
+            const u=employeeUsers[i]; if(!u)return;
+            if(String(u.username).toLowerCase()==='admin'){ showAlert('ບໍ່ສາມາດ','ບັນຊີ admin ຫຼັກບໍ່ສາມາດປິດໄດ້','error'); return; }
+            try { await employeeApi('toggleuser',{username:u.username}); await loadEmployees(); }
+            catch(e){ showAlert('ຜິດພາດ',e.message,'error'); }
+        }
 
 </script>
+
+    <!-- EMPLOYEE / USER MANAGEMENT (ADMIN ONLY) -->
+    <div id="employee-modal" class="hidden fixed inset-0 z-[9500] bg-slate-900/50 p-4 overflow-y-auto">
+      <div class="max-w-5xl mx-auto my-6 bg-white rounded-2xl shadow-xl">
+        <div class="flex items-center justify-between px-5 py-4 border-b">
+          <div>
+            <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-users-gear text-blue-600 mr-2"></i>ຈັດການພະນັກງານ</h2>
+            <p class="text-xs text-slate-500">ບັນທຶກພະນັກງານ ແລະ ບັນຊີ Login ໃນ Google Sheet USERS</p>
+          </div>
+          <button onclick="closeEmployeeManager()" class="w-9 h-9 rounded-lg bg-slate-100"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="p-5">
+          <form id="employee-form" onsubmit="saveEmployee(event)" class="grid md:grid-cols-2 gap-4 bg-slate-50 border rounded-2xl p-4 mb-5">
+            <input type="hidden" id="emp-original-username">
+            <div><label class="block text-sm font-medium mb-1">ລະຫັດພະນັກງານ</label><input id="emp-code" required class="w-full px-3 py-2 border rounded-xl" placeholder="EMP001"></div>
+            <div><label class="block text-sm font-medium mb-1">ຊື່-ນາມສະກຸນ</label><input id="emp-name" required class="w-full px-3 py-2 border rounded-xl"></div>
+            <div><label class="block text-sm font-medium mb-1">Username</label><input id="emp-username" required class="w-full px-3 py-2 border rounded-xl"></div>
+            <div><label class="block text-sm font-medium mb-1">Password <span class="text-xs text-slate-400">(ຢ່າງນ້ອຍ 8 ຕົວ)</span></label><input id="emp-password" type="password" class="w-full px-3 py-2 border rounded-xl" placeholder="ປ່ອຍວ່າງເມື່ອແກ້ໄຂ"></div>
+            <div><label class="block text-sm font-medium mb-1">ພະແນກ</label><input id="emp-department" class="w-full px-3 py-2 border rounded-xl"></div>
+            <div><label class="block text-sm font-medium mb-1">ຕຳແໜ່ງ</label><input id="emp-position" class="w-full px-3 py-2 border rounded-xl"></div>
+            <div><label class="block text-sm font-medium mb-1">ເບີໂທ</label><input id="emp-phone" class="w-full px-3 py-2 border rounded-xl"></div>
+            <div><label class="block text-sm font-medium mb-1">ສິດໃຊ້ງານ</label><select id="emp-role" class="w-full px-3 py-2 border rounded-xl"><option value="user">User</option><option value="admin">Admin</option></select>
+                
+</div>
+            <div><label class="block text-sm font-medium mb-1">ສະຖານະ</label><select id="emp-active" class="w-full px-3 py-2 border rounded-xl"><option value="true">ໃຊ້ງານ</option><option value="false">ປິດບັນຊີ</option></select></div>
+            <div class="md:col-span-2 flex gap-2 justify-end">
+              <button type="button" onclick="resetEmployeeForm()" class="px-4 py-2 bg-slate-200 rounded-xl">ລ້າງຟອມ</button>
+              <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-xl"><i class="fa-solid fa-floppy-disk mr-1"></i>ບັນທຶກ</button>
+            </div>
+          </form>
+          <div class="overflow-x-auto border rounded-xl">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-100"><tr>
+                <th class="p-3 text-left">ລະຫັດ</th><th class="p-3 text-left">ຊື່</th><th class="p-3 text-left">Username</th>
+                <th class="p-3 text-left">ພະແນກ/ຕຳແໜ່ງ</th><th class="p-3 text-left">ເບີໂທ</th><th class="p-3">ສິດ</th><th class="p-3">ສະຖານະ</th><th class="p-3">ຈັດການ</th>
+              </tr></thead>
+              <tbody id="employee-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
 </body>
 </html>
