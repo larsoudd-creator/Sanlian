@@ -1500,7 +1500,10 @@ function backupToSheets(itemsList, transactionsList) {
             document.getElementById('dash-total-stock').textContent = totalStock;
 
             const todayStr = new Date().toISOString().split('T')[0];
-            const todayTx = transactions.filter(tx => tx.timestamp.startsWith(todayStr));
+            const todayTx = transactions.filter(tx => {
+                const timestamp = tx && tx.timestamp != null ? String(tx.timestamp) : '';
+                return timestamp.startsWith(todayStr);
+            });
             document.getElementById('dash-today-tx').textContent = todayTx.length;
 
             // Low Stock Items check using each item's customized minQty
