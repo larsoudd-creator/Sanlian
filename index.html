@@ -23,7 +23,7 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    font-family:'Noto Sans Lao','Noto Sans SC','Noto Sans',sans-serif;
+    font-family:'Noto Sans Lao','SANLIAN Lao','Noto Sans SC','Noto Sans','SANLIAN Latin',sans-serif;
     background:
       radial-gradient(circle at 15% 10%, #103e3b 0%, transparent 45%),
       radial-gradient(circle at 85% 90%, #0a2e2b 0%, transparent 50%),
@@ -322,7 +322,6 @@
     font-size:28px;
     font-weight:700;
     color:var(--brass);
-    letter-spacing:1px;
     margin:0;
   }
   .doc-no{
@@ -341,7 +340,6 @@
   .party-block .label{
     font-size:11.5px;
     text-transform:uppercase;
-    letter-spacing:1px;
     color:var(--brass);
     font-weight:700;
     margin-bottom:5px;
@@ -560,7 +558,7 @@
     padding:30px 0;
   }
 </style>
-<link rel="stylesheet" href="workspace.css">
+<link rel="stylesheet" href="workspace.css?v=4">
 <style id="printPageStyle"></style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
@@ -636,16 +634,16 @@
 
     <details class="section">
       <summary data-i18n="secCompany">ຂໍ້ມູນບໍລິສັດ</summary>
-      <div class="field"><label data-i18n="lblCompanyName">ຊື່ບໍລິສັດ / ຮ້ານ</label><input type="text" id="companyName" value="ຮ້ານພີມປ້າຍ ຊານນີ"></div>
+      <div class="field"><label data-i18n="lblCompanyName">ຊື່ບໍລິສັດ / ຮ້ານ</label><input type="text" id="companyName" value="ຮ້ານພີມປ້າຍຊານນີ"></div>
       <div class="field"><label data-i18n="lblCompanyMeta">ທີ່ຢູ່ / ເບີໂທ / ອີເມວ</label><textarea id="companyMeta">ບ້ານນາເລົາ, ເມືອງໄຊ, ແຂວງອຸດົມໄຊ
-ໂທ: 020 92828222 | Sanlian@gmil.com</textarea></div>
+ໂທ: 020 92828222| SANLIAN@gmail.com</textarea></div>
     </details>
 
     <details class="section" open>
       <summary data-i18n="secClient">ຂໍ້ມູນລູກຄ້າ</summary>
-      <div class="field"><label data-i18n="lblClientName">ຊື່ລູກຄ້າ / ບໍລິສັດລູກຄ້າ</label><input type="text" id="clientName" value="ປ້ອນຊື່ລູກຄ້າ ຫຼື ບໍລິສັດ"></div>
-      <div class="field"><label data-i18n="lblClientMeta">ທີ່ຢູ່ / ເບີໂທ</label><textarea id="clientMeta">ບ້ານນາເລົາ, ເມືອງໄຊ, ແຂວງອຸດົມໄຊ
-ໂທ: 020 92828222</textarea></div>
+      <div class="field"><label data-i18n="lblClientName">ຊື່ລູກຄ້າ / ບໍລິສັດລູກຄ້າ</label><input type="text" id="clientName" value="ຊື່ລູກຄ້າ ຫຼື ບໍລິສັດ"></div>
+      <div class="field"><label data-i18n="lblClientMeta">ທີ່ຢູ່ / ເບີໂທ</label><textarea id="clientMeta">ຕົວຢ່າງ: ບ້ານນາເລົາ, ເມືອງໄຊ, ແຂວງອຸດົມໄຊ
+ໂທ: ໂທ: 020 92828222</textarea></div>
     </details>
 
     <details class="section" open>
@@ -746,7 +744,7 @@
             <th data-i18n="thItem">ລາຍການ</th>
             <th data-i18n="thWorkDetail">ລາຍລະອຽດວຽກງານ</th>
             <th class="center" style="width:90px; white-space:nowrap;" data-i18n="thSize">ຂະໜາດ</th>
-            <th class="center" style="width:78px; white-space:nowrap;" data-i18n="thSizeTotal">ພື້ນທີ່ລວມ</th>
+            <th class="center" style="width:78px; white-space:nowrap;" data-i18n="thSizeTotal">ພື້ນທີ່ຈິງ</th>
             <th class="center" style="width:56px;" data-i18n="thQty">ຈຳນວນ</th>
             <th class="num" style="width:100px;" data-i18n="thPrice">ລາຄາ/ໜ່ວຍ</th>
             <th class="num" style="width:110px;" data-i18n="thLineTotal">ລວມ</th>
@@ -831,38 +829,48 @@ function currencyLabel(){
   return entry[currentLang] || entry.lo;
 }
 
-// Any dimension under 1 meter is billed as a full 1 meter minimum
-// (common practice for glass/fabric/tile-style pricing).
 function toMeters(v, unit){
   const n = parseFloat(v);
   if(!n || n <= 0) return 0;
   return unit === 'cm' ? n / 100 : n;
 }
-// The "round up to 1 meter minimum" business rule only makes sense when the
-// entered value is already in meters. When the person enters cm (a much
-// finer unit), we use the value as-is with no floor.
-function effectiveDim(v, unit){
+// The legacy billing minimum applies only to dimensions entered in meters.
+function billableDimension(v, unit){
   const m = toMeters(v, unit);
   if(!m) return 0;
   if(unit === 'cm') return m;
   return m < 1 ? 1 : m;
 }
-function calcArea(it){
+function calcMeasuredArea(it){
   const unit = it.sizeUnit || 'm';
-  const w = effectiveDim(it.width, unit), h = effectiveDim(it.height, unit);
+  return toMeters(it.width, unit) * toMeters(it.height, unit);
+}
+function calcBillableArea(it){
+  const unit = it.sizeUnit || 'm';
+  const w = billableDimension(it.width, unit), h = billableDimension(it.height, unit);
   if(w && h) return Math.round(w*h*10000)/10000;
   return 0;
 }
-function formatArea(it){
-  const area = calcArea(it); // always in m² internally
+function formatArea(area){
   if(area <= 0) return '-';
-  const unitSel = document.getElementById('areaUnitSelect');
-  const unit = unitSel ? unitSel.value : 'm2';
-  if(unit === 'cm2'){
-    const cm2 = Math.round(area * 10000 * 100) / 100;
-    return `${cm2.toLocaleString('en-US', {maximumFractionDigits:2})} cm²`;
-  }
-  return `${area.toLocaleString('en-US', {maximumFractionDigits:4})} m²`;
+  const inCentimeters = document.getElementById('areaUnitSelect')?.value === 'cm2';
+  const value = inCentimeters ? area * 10000 : area;
+  const maximumFractionDigits = inCentimeters ? 2 : 4;
+  const options = value < 10 ** -maximumFractionDigits
+    ? {maximumSignificantDigits: 4}
+    : {maximumFractionDigits};
+  return `${value.toLocaleString('en-US', options)} ${inCentimeters ? 'cm²' : 'm²'}`;
+}
+function areaChargeLabel(it){
+  if(it.useArea === false) return '';
+  const billable = calcBillableArea(it);
+  if(billable <= 0) return '';
+  const label = formatArea(billable);
+  return label === formatArea(calcMeasuredArea(it)) ? '' : `${t('areaCharge')} ${label}`;
+}
+function areaChargeMarkup(it){
+  const label = areaChargeLabel(it);
+  return label ? `<small class="area-charge">${escapeHtml(label)}</small>` : '';
 }
 function formatSizeText(it){
   const w = it.width, h = it.height;
@@ -875,7 +883,7 @@ function formatSizeText(it){
 function formatCombinedSize(it){
   const w = it.width, h = it.height;
   const unit = it.sizeUnit || 'm';
-  if(w && h) return `${w}×${h} ${unit} = ${formatArea(it)}`;
+  if(w && h) return `${w}×${h} ${unit} = ${formatArea(calcMeasuredArea(it))}`;
   if(w) return `${w} ${unit}`;
   if(h) return `${h} ${unit}`;
   return '-';
@@ -884,7 +892,7 @@ function calcLineTotal(it){
   const qty = parseFloat(it.qty) || 0;
   const price = parseFloat(it.price) || 0;
   if(it.useArea !== false){
-    const area = calcArea(it);
+    const area = calcBillableArea(it);
     if(area > 0) return qty * area * price;
   }
   return qty * price;
@@ -935,7 +943,8 @@ function renderItemsForm(){
           </div>
         </div>
         <div class="item-grid-size-total">
-          <label>${t('thSizeTotal')}</label><input type="text" disabled data-area-idx="${idx}" value="${escapeHtml(String(formatCombinedSize(it)))}">
+          <label>${t('thSizeTotal')}</label><input type="text" disabled data-area-idx="${idx}" value="${escapeHtml(formatCombinedSize(it))}">
+          <small class="area-charge" data-area-charge-idx="${idx}">${escapeHtml(areaChargeLabel(it))}</small>
         </div>
         <div class="use-area-row">
           <label><input type="checkbox" data-field="useArea" data-idx="${idx}" ${it.useArea !== false ? 'checked' : ''}> ${t('lblUseArea')}</label>
@@ -989,7 +998,7 @@ function updatePreview(){
       <td>${escapeHtml(it.name) || '-'}</td>
       <td>${escapeHtml(it.workDetail||'') || '-'}</td>
       <td class="center">${escapeHtml(String(formatSizeText(it)))}</td>
-      <td class="center">${formatArea(it)}</td>
+      <td class="center">${formatArea(calcMeasuredArea(it))}${areaChargeMarkup(it)}</td>
       <td class="center">${escapeHtml(String(it.qty))}</td>
       <td class="num">${fmt(it.price)}</td>
       <td class="num">${fmt(lineTotal)}</td>
@@ -1011,6 +1020,14 @@ function updatePreview(){
   `;
 }
 
+function updateItemAmounts(idx){
+  const it = items[idx];
+  const card = itemCards.get(it);
+  card.querySelector('[data-area-idx]').value = formatCombinedSize(it);
+  card.querySelector('[data-area-charge-idx]').textContent = areaChargeLabel(it);
+  card.querySelector('[data-total-idx]').value = fmt(calcLineTotal(it));
+}
+
 document.getElementById('itemsList').addEventListener('input', (e) => {
   const idx = e.target.getAttribute('data-idx');
   const field = e.target.getAttribute('data-field');
@@ -1027,20 +1044,14 @@ document.getElementById('itemsList').addEventListener('input', (e) => {
 
   if(field === 'useArea'){
     items[idx].useArea = e.target.checked;
-    const areaOut = document.querySelector(`[data-area-idx="${idx}"]`);
-    if(areaOut) areaOut.value = formatCombinedSize(items[idx]);
-    const totalOut = document.querySelector(`[data-total-idx="${idx}"]`);
-    if(totalOut) totalOut.value = fmt(calcLineTotal(items[idx]));
+    updateItemAmounts(idx);
     updatePreview();
     return;
   }
 
   if(field === 'sizeUnit'){
     items[idx].sizeUnit = e.target.value;
-    const areaOut = document.querySelector(`[data-area-idx="${idx}"]`);
-    if(areaOut) areaOut.value = formatCombinedSize(items[idx]);
-    const totalOut = document.querySelector(`[data-total-idx="${idx}"]`);
-    if(totalOut) totalOut.value = fmt(calcLineTotal(items[idx]));
+    updateItemAmounts(idx);
     updatePreview();
     return;
   }
@@ -1064,10 +1075,7 @@ document.getElementById('itemsList').addEventListener('input', (e) => {
 
     // Update only this card's computed read-only outputs, without rebuilding
     // the list (rebuilding would reset the field being typed into).
-    const areaOut = document.querySelector(`[data-area-idx="${idx}"]`);
-    if(areaOut) areaOut.value = formatCombinedSize(items[idx]);
-    const totalOut = document.querySelector(`[data-total-idx="${idx}"]`);
-    if(totalOut) totalOut.value = fmt(calcLineTotal(items[idx]));
+    updateItemAmounts(idx);
 
     updatePreview();
   }
@@ -1257,7 +1265,7 @@ const translations = {
   lblValidDate: {lo:'ໃຊ້ໄດ້ຮອດວັນທີ (ອາຍຸໃບສະເໜີ)', zh:'有效期至'},
   lblDiscountPct: {lo:'ສ່ວນຫຼຸດ (%)', zh:'折扣 (%)'},
   lblCurrency: {lo:'ສະກຸນເງິນ', zh:'货币'},
-  lblAreaUnit: {lo:'ຫົວໜ່ວຍພື້ນທີ່ (ຄໍລໍາ "ລວມ")', zh:'面积单位（"合计"列）'},
+  lblAreaUnit: {lo:'ຫົວໜ່ວຍພື້ນທີ່', zh:'面积单位'},
   lblAttachUpload: {lo:'ອັບໂຫລດຮູບ (ຈະສະແດງທາງລຸ່ມຂອງ "ລວມທັງໝົດ" ໃນເອກະສານ)', zh:'上传图片（将显示在"总计"下方）'},
   btnAddItem: {lo:'ເພີ່ມລາຍການ', zh:'添加项目'},
   btnRmImg: {lo:'ລຶບຮູບ', zh:'删除图片'},
@@ -1273,7 +1281,8 @@ const translations = {
   thItem: {lo:'ລາຍການ', zh:'项目'},
   thWorkDetail: {lo:'ລາຍລະອຽດວຽກງານ', zh:'制作工艺'},
   thSize: {lo:'ຂະໜາດ', zh:'尺寸'},
-  thSizeTotal: {lo:'ພື້ນທີ່ລວມ', zh:'面积合计'},
+  thSizeTotal: {lo:'ພື້ນທີ່ຈິງ', zh:'实际面积'},
+  areaCharge: {lo:'ຄິດລາຄາ', zh:'计价面积'},
   thWidth: {lo:'ກວ້າງ', zh:'宽'},
   thHeight: {lo:'ສູງ', zh:'高'},
   thQty: {lo:'ຈຳນວນ', zh:'数量'},

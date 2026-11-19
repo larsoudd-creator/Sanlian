@@ -94,7 +94,7 @@ input:disabled { background: #edf3ef; color: var(--slate); }
 .paper-size { border: 1px solid var(--line); border-radius: 6px; color: var(--slate); font: 600 13px 'JetBrains Mono', monospace; padding: 4px 7px; }
 .doc-outer { --paper-width: 794px; --paper-height: 1123px; max-width: var(--paper-width); margin-inline: auto; background: transparent; box-shadow: 0 6px 22px #213d3026; }
 .doc-outer.landscape { --paper-width: 1123px; --paper-height: 794px; }
-#doc { font-family: 'SANLIAN Lao', 'SANLIAN Latin', 'Noto Sans SC', sans-serif; width: var(--paper-width); min-height: var(--paper-height); padding: 44px 38px; background: #fff; transform: scale(var(--paper-scale, 1)); transform-origin: left top; overflow-wrap: anywhere; }
+#doc { width: var(--paper-width); min-height: var(--paper-height); padding: 44px 38px; background: #fff; transform: scale(var(--paper-scale, 1)); transform-origin: left top; overflow-wrap: anywhere; }
 .report-outer { padding: 22px; }
 .report-head h2 { font-family: inherit; }
 .report-controls input[type=text] { max-width: 100%; }
@@ -147,3 +147,6 @@ dialog::backdrop { background: #142b23a0; }
 @media screen and (max-width: 980px) {
   .preview-jump { display: inline-block; margin-top: 9px; font-size: 14px; font-weight: 600; color: var(--teal-dark); }
 }
+
+.area-charge { display: block; margin-top: 3px; color: var(--slate); font-size: .85em; line-height: 1.45; }
+.area-charge:empty { display: none; }
