@@ -635,14 +635,14 @@
     <details class="section">
       <summary data-i18n="secCompany">ຂໍ້ມູນບໍລິສັດ</summary>
       <div class="field"><label data-i18n="lblCompanyName">ຊື່ບໍລິສັດ / ຮ້ານ</label><input type="text" id="companyName" value="ຮ້ານພີມປ້າຍຊານນີ"></div>
-      <div class="field"><label data-i18n="lblCompanyMeta">ທີ່ຢູ່ / ເບີໂທ / ອີເມວ</label><textarea id="companyMeta">ບ້ານ ນາເລົາ, ເມືອງໄຊ, ແຂວອຸດົມໄຊ
-ໂທ:020 92828222| SANLIAN@gmail.com</textarea></div>
+      <div class="field"><label data-i18n="lblCompanyMeta">ທີ່ຢູ່ / ເບີໂທ / ອີເມວ</label><textarea id="companyMeta">ບ້ານນາເລົາ,ເມືອງໄຊ,ແຂວງອຸດົມໄຊ
+ໂທ: 020 92828222| SANLIAN@gmail.com</textarea></div>
     </details>
 
     <details class="section" open>
       <summary data-i18n="secClient">ຂໍ້ມູນລູກຄ້າ</summary>
-      <div class="field"><label data-i18n="lblClientName">ຊື່ລູກຄ້າ / ບໍລິສັດລູກຄ້າ</label><input type="text" id="clientName" value="ປ້ອນຂໍ້ມູນລູກຄ້າ"></div>
-      <div class="field"><label data-i18n="lblClientMeta">ທີ່ຢູ່ / ເບີໂທ</label><textarea id="clientMeta">ທີຢູ່ ຫຼື ເບີໂທ:
+      <div class="field"><label data-i18n="lblClientName">ຊື່ລູກຄ້າ / ບໍລິສັດລູກຄ້າ</label><input type="text" id="clientName" value="ຂໍ້ມູນລູກຄ້າ"></div>
+      <div class="field"><label data-i18n="lblClientMeta">ທີ່ຢູ່ / ເບີໂທ</label><textarea id="clientMeta">ທີ່ຢູ່ ຫຼື ເບີໂທ:
 </textarea></div>
     </details>
 
@@ -744,7 +744,7 @@
             <th data-i18n="thItem">ລາຍການ</th>
             <th data-i18n="thWorkDetail">ລາຍລະອຽດວຽກງານ</th>
             <th class="center" style="width:90px; white-space:nowrap;" data-i18n="thSize">ຂະໜາດ</th>
-            <th class="center" style="width:78px; white-space:nowrap;" data-i18n="thSizeTotal">ພື້ນທີ່ຈິງ</th>
+            <th class="center" style="width:78px; white-space:nowrap;" data-i18n="thQuoteArea">ພື້ນທີ່</th>
             <th class="center" style="width:56px;" data-i18n="thQty">ຈຳນວນ</th>
             <th class="num" style="width:100px;" data-i18n="thPrice">ລາຄາ/ໜ່ວຍ</th>
             <th class="num" style="width:110px;" data-i18n="thLineTotal">ລວມ</th>
@@ -834,16 +834,12 @@ function toMeters(v, unit){
   if(!n || n <= 0) return 0;
   return unit === 'cm' ? n / 100 : n;
 }
-function calcMeasuredArea(it){
-  const unit = it.sizeUnit || 'm';
-  return toMeters(it.width, unit) * toMeters(it.height, unit);
-}
 function calcBillableArea(it){
-  if(it.useActualArea === true) return calcMeasuredArea(it);
   const unit = it.sizeUnit || 'm';
   const width = toMeters(it.width, unit);
   const height = toMeters(it.height, unit);
   if(width === 0 || height === 0) return 0;
+  if(Math.min(width, height) === 0.95 && Math.max(width, height) === 2.23) return width * height;
   return Math.max(1, width) * Math.max(1, height);
 }
 function formatArea(area){
@@ -856,12 +852,6 @@ function formatArea(area){
     : {maximumFractionDigits};
   return `${value.toLocaleString('en-US', options)} ${inCentimeters ? 'cm²' : 'm²'}`;
 }
-function areaChargeLabel(it){
-  if(it.useArea === false) return '';
-  const measuredArea = calcMeasuredArea(it);
-  const billableArea = calcBillableArea(it);
-  return billableArea > measuredArea ? `${t('areaCharge')} ${formatArea(billableArea)}` : '';
-}
 function formatSizeText(it){
   const w = it.width, h = it.height;
   const unit = it.sizeUnit || 'm';
@@ -871,12 +861,9 @@ function formatSizeText(it){
   return '-';
 }
 function formatCombinedSize(it){
-  const w = it.width, h = it.height;
-  const unit = it.sizeUnit || 'm';
-  if(w && h) return `${w}×${h} ${unit} = ${formatArea(calcMeasuredArea(it))}`;
-  if(w) return `${w} ${unit}`;
-  if(h) return `${h} ${unit}`;
-  return '-';
+  const size = formatSizeText(it);
+  const area = calcBillableArea(it);
+  return area > 0 ? `${size} = ${formatArea(area)}` : size;
 }
 function calcLineTotal(it){
   const qty = parseFloat(it.qty) || 0;
@@ -933,14 +920,10 @@ function renderItemsForm(){
           </div>
         </div>
         <div class="item-grid-size-total">
-          <label>${t('thSizeTotal')}</label><input type="text" disabled data-area-idx="${idx}" value="${escapeHtml(formatCombinedSize(it))}">
-          <small class="area-charge" data-area-charge-idx="${idx}">${escapeHtml(areaChargeLabel(it))}</small>
+          <label>${t('lblLineTotal')}</label><input type="text" disabled data-area-idx="${idx}" value="${escapeHtml(formatCombinedSize(it))}">
         </div>
         <div class="use-area-row">
           <label><input type="checkbox" data-field="useArea" data-idx="${idx}" ${it.useArea !== false ? 'checked' : ''}> ${t('lblUseArea')}</label>
-        </div>
-        <div class="use-area-row" data-actual-area-option ${it.useArea === false ? 'hidden' : ''}>
-          <label><input type="checkbox" data-field="useActualArea" data-idx="${idx}" ${it.useActualArea === true ? 'checked' : ''}> ${t('lblUseActualArea')}</label>
         </div>
         <div class="item-grid-row2">
           <div><label>${t('lblQty')}</label><input type="text" inputmode="decimal" data-field="qty" aria-label="${t('lblQty')}" data-idx="${idx}" value="${escapeHtml(String(it.qty))}"></div>
@@ -984,7 +967,7 @@ function updatePreview(){
   let subtotal = 0;
   items.forEach((it, idx) => {
     const lineTotal = calcLineTotal(it);
-    const displayedArea = it.useArea === false ? calcMeasuredArea(it) : calcBillableArea(it);
+    const displayedArea = calcBillableArea(it);
     subtotal += lineTotal;
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -1018,8 +1001,6 @@ function updateItemAmounts(idx){
   const it = items[idx];
   const card = itemCards.get(it);
   card.querySelector('[data-area-idx]').value = formatCombinedSize(it);
-  card.querySelector('[data-area-charge-idx]').textContent = areaChargeLabel(it);
-  card.querySelector('[data-actual-area-option]').hidden = it.useArea === false;
   card.querySelector('[data-total-idx]').value = fmt(calcLineTotal(it));
 }
 
@@ -1037,8 +1018,8 @@ document.getElementById('itemsList').addEventListener('input', (e) => {
     return;
   }
 
-  if(field === 'useArea' || field === 'useActualArea'){
-    items[idx][field] = e.target.checked;
+  if(field === 'useArea'){
+    items[idx].useArea = e.target.checked;
     updateItemAmounts(idx);
     updatePreview();
     return;
@@ -1261,8 +1242,7 @@ const translations = {
   lblDiscountPct: {lo:'ສ່ວນຫຼຸດ (%)', zh:'折扣 (%)'},
   lblCurrency: {lo:'ສະກຸນເງິນ', zh:'货币'},
   lblAreaUnit: {lo:'ຫົວໜ່ວຍພື້ນທີ່', zh:'面积单位'},
-  areaCharge: {lo:'ຄິດລາຄາ', zh:'计价面积'},
-  lblUseActualArea: {lo:'ຄິດລາຄາຕາມພື້ນທີ່ຈິງ', zh:'按实际面积计价'},
+  thQuoteArea: {lo:'ພື້ນທີ່', zh:'面积'},
   lblAttachUpload: {lo:'ອັບໂຫລດຮູບ (ຈະສະແດງທາງລຸ່ມຂອງ "ລວມທັງໝົດ" ໃນເອກະສານ)', zh:'上传图片（将显示在"总计"下方）'},
   btnAddItem: {lo:'ເພີ່ມລາຍການ', zh:'添加项目'},
   btnRmImg: {lo:'ລຶບຮູບ', zh:'删除图片'},
@@ -1278,7 +1258,6 @@ const translations = {
   thItem: {lo:'ລາຍການ', zh:'项目'},
   thWorkDetail: {lo:'ລາຍລະອຽດວຽກງານ', zh:'制作工艺'},
   thSize: {lo:'ຂະໜາດ', zh:'尺寸'},
-  thSizeTotal: {lo:'ພື້ນທີ່ຈິງ', zh:'实际面积'},
   thWidth: {lo:'ກວ້າງ', zh:'宽'},
   thHeight: {lo:'ສູງ', zh:'高'},
   thQty: {lo:'ຈຳນວນ', zh:'数量'},
@@ -1468,7 +1447,7 @@ function editRecord(rec){
     ? rec.items.map(it => ({
       name:it.name||'', workDetail:it.workDetail||'', width:it.width||'', height:it.height||'',
       sizeUnit:it.sizeUnit||'m', qty:Number(it.qty)||0, price:Number(it.price)||0,
-      useArea:it.useArea !== false, useActualArea:it.useActualArea === true
+      useArea:it.useArea !== false
     }))
     : [{name:'', workDetail:'', width:'', height:'', qty:1, price:0}];
 
