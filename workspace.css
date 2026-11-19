@@ -148,5 +148,3 @@ dialog::backdrop { background: #142b23a0; }
   .preview-jump { display: inline-block; margin-top: 9px; font-size: 14px; font-weight: 600; color: var(--teal-dark); }
 }
 
-.area-charge { display: block; margin-top: 3px; color: var(--slate); font-size: .85em; line-height: 1.45; }
-.area-charge:empty { display: none; }

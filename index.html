@@ -641,9 +641,9 @@
 
     <details class="section" open>
       <summary data-i18n="secClient">ຂໍ້ມູນລູກຄ້າ</summary>
-      <div class="field"><label data-i18n="lblClientName">ຊື່ລູກຄ້າ / ບໍລິສັດລູກຄ້າ</label><input type="text" id="clientName" value="ຊື່ລູກຄ້າ ຫຼື ບໍລິສັດ"></div>
-      <div class="field"><label data-i18n="lblClientMeta">ທີ່ຢູ່ / ເບີໂທ</label><textarea id="clientMeta">ຕົວຢ່າງ: ບ້ານນາເລົາ, ເມືອງໄຊ, ແຂວງອຸດົມໄຊ
-ໂທ: ໂທ: 020 92828222</textarea></div>
+      <div class="field"><label data-i18n="lblClientName">ຊື່ລູກຄ້າ / ບໍລິສັດລູກຄ້າ</label><input type="text" id="clientName" value="ເພີ່ມຂໍ້ມູນລູກຄ້າ"></div>
+      <div class="field"><label data-i18n="lblClientMeta">ທີ່ຢູ່ / ເບີໂທ</label><textarea id="clientMeta">ລາຍລະອຽດລູກຄ້າ
+ໂທ: 020 92828222</textarea></div>
     </details>
 
     <details class="section" open>
@@ -834,22 +834,9 @@ function toMeters(v, unit){
   if(!n || n <= 0) return 0;
   return unit === 'cm' ? n / 100 : n;
 }
-// The legacy billing minimum applies only to dimensions entered in meters.
-function billableDimension(v, unit){
-  const m = toMeters(v, unit);
-  if(!m) return 0;
-  if(unit === 'cm') return m;
-  return m < 1 ? 1 : m;
-}
 function calcMeasuredArea(it){
   const unit = it.sizeUnit || 'm';
   return toMeters(it.width, unit) * toMeters(it.height, unit);
-}
-function calcBillableArea(it){
-  const unit = it.sizeUnit || 'm';
-  const w = billableDimension(it.width, unit), h = billableDimension(it.height, unit);
-  if(w && h) return Math.round(w*h*10000)/10000;
-  return 0;
 }
 function formatArea(area){
   if(area <= 0) return '-';
@@ -860,17 +847,6 @@ function formatArea(area){
     ? {maximumSignificantDigits: 4}
     : {maximumFractionDigits};
   return `${value.toLocaleString('en-US', options)} ${inCentimeters ? 'cm²' : 'm²'}`;
-}
-function areaChargeLabel(it){
-  if(it.useArea === false) return '';
-  const billable = calcBillableArea(it);
-  if(billable <= 0) return '';
-  const label = formatArea(billable);
-  return label === formatArea(calcMeasuredArea(it)) ? '' : `${t('areaCharge')} ${label}`;
-}
-function areaChargeMarkup(it){
-  const label = areaChargeLabel(it);
-  return label ? `<small class="area-charge">${escapeHtml(label)}</small>` : '';
 }
 function formatSizeText(it){
   const w = it.width, h = it.height;
@@ -892,7 +868,7 @@ function calcLineTotal(it){
   const qty = parseFloat(it.qty) || 0;
   const price = parseFloat(it.price) || 0;
   if(it.useArea !== false){
-    const area = calcBillableArea(it);
+    const area = calcMeasuredArea(it);
     if(area > 0) return qty * area * price;
   }
   return qty * price;
@@ -944,7 +920,6 @@ function renderItemsForm(){
         </div>
         <div class="item-grid-size-total">
           <label>${t('thSizeTotal')}</label><input type="text" disabled data-area-idx="${idx}" value="${escapeHtml(formatCombinedSize(it))}">
-          <small class="area-charge" data-area-charge-idx="${idx}">${escapeHtml(areaChargeLabel(it))}</small>
         </div>
         <div class="use-area-row">
           <label><input type="checkbox" data-field="useArea" data-idx="${idx}" ${it.useArea !== false ? 'checked' : ''}> ${t('lblUseArea')}</label>
@@ -998,7 +973,7 @@ function updatePreview(){
       <td>${escapeHtml(it.name) || '-'}</td>
       <td>${escapeHtml(it.workDetail||'') || '-'}</td>
       <td class="center">${escapeHtml(String(formatSizeText(it)))}</td>
-      <td class="center">${formatArea(calcMeasuredArea(it))}${areaChargeMarkup(it)}</td>
+      <td class="center">${formatArea(calcMeasuredArea(it))}</td>
       <td class="center">${escapeHtml(String(it.qty))}</td>
       <td class="num">${fmt(it.price)}</td>
       <td class="num">${fmt(lineTotal)}</td>
@@ -1024,7 +999,6 @@ function updateItemAmounts(idx){
   const it = items[idx];
   const card = itemCards.get(it);
   card.querySelector('[data-area-idx]').value = formatCombinedSize(it);
-  card.querySelector('[data-area-charge-idx]').textContent = areaChargeLabel(it);
   card.querySelector('[data-total-idx]').value = fmt(calcLineTotal(it));
 }
 
@@ -1282,7 +1256,6 @@ const translations = {
   thWorkDetail: {lo:'ລາຍລະອຽດວຽກງານ', zh:'制作工艺'},
   thSize: {lo:'ຂະໜາດ', zh:'尺寸'},
   thSizeTotal: {lo:'ພື້ນທີ່ຈິງ', zh:'实际面积'},
-  areaCharge: {lo:'ຄິດລາຄາ', zh:'计价面积'},
   thWidth: {lo:'ກວ້າງ', zh:'宽'},
   thHeight: {lo:'ສູງ', zh:'高'},
   thQty: {lo:'ຈຳນວນ', zh:'数量'},
