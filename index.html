@@ -635,15 +635,14 @@
     <details class="section">
       <summary data-i18n="secCompany">ຂໍ້ມູນບໍລິສັດ</summary>
       <div class="field"><label data-i18n="lblCompanyName">ຊື່ບໍລິສັດ / ຮ້ານ</label><input type="text" id="companyName" value="ຮ້ານພີມປ້າຍຊານນີ"></div>
-      <div class="field"><label data-i18n="lblCompanyMeta">ທີ່ຢູ່ / ເບີໂທ / ອີເມວ</label><textarea id="companyMeta">ບ້ານນາເລົາ, ເມືອງໄຊ, ແຂວງອຸດົມໄຊ
-ໂທ: 020 92828222| SANLIAN@gmail.com</textarea></div>
+      <div class="field"><label data-i18n="lblCompanyMeta">ທີ່ຢູ່ / ເບີໂທ / ອີເມວ</label><textarea id="companyMeta">ບ້ານນາເລົາ,ເມືອງໄຊ,ແຂວງອຸດົມໄຊ
+ໂທ: 020 92828222 | SANLIAN@gmail.com</textarea></div>
     </details>
 
     <details class="section" open>
       <summary data-i18n="secClient">ຂໍ້ມູນລູກຄ້າ</summary>
-      <div class="field"><label data-i18n="lblClientName">ຊື່ລູກຄ້າ / ບໍລິສັດລູກຄ້າ</label><input type="text" id="clientName" value="ເພີ່ມຂໍ້ມູນລູກຄ້າ"></div>
-      <div class="field"><label data-i18n="lblClientMeta">ທີ່ຢູ່ / ເບີໂທ</label><textarea id="clientMeta">ລາຍລະອຽດລູກຄ້າ
-ໂທ: 020 92828222</textarea></div>
+      <div class="field"><label data-i18n="lblClientName">ຊື່ລູກຄ້າ / ບໍລິສັດລູກຄ້າ</label><input type="text" id="clientName" value="ຊື່ລູກຄ້າ ຫຼື ບໍລິສັດ"></div>
+      <div class="field"><label data-i18n="lblClientMeta">ທີ່ຢູ່ / ເບີໂທ</label><textarea id="clientMeta">ທີ່ຢູ່ ຫຼື ສະຖານທີ </textarea></div>
     </details>
 
     <details class="section" open>
@@ -838,6 +837,14 @@ function calcMeasuredArea(it){
   const unit = it.sizeUnit || 'm';
   return toMeters(it.width, unit) * toMeters(it.height, unit);
 }
+function calcBillableArea(it){
+  const unit = it.sizeUnit || 'm';
+  const width = toMeters(it.width, unit);
+  const height = toMeters(it.height, unit);
+  const measuredArea = width * height;
+  if(measuredArea === 0 || measuredArea >= 1) return measuredArea;
+  return Math.max(1, width) * Math.max(1, height);
+}
 function formatArea(area){
   if(area <= 0) return '-';
   const inCentimeters = document.getElementById('areaUnitSelect')?.value === 'cm2';
@@ -847,6 +854,12 @@ function formatArea(area){
     ? {maximumSignificantDigits: 4}
     : {maximumFractionDigits};
   return `${value.toLocaleString('en-US', options)} ${inCentimeters ? 'cm²' : 'm²'}`;
+}
+function areaChargeLabel(it){
+  if(it.useArea === false) return '';
+  const measuredArea = calcMeasuredArea(it);
+  const billableArea = calcBillableArea(it);
+  return billableArea > measuredArea ? `${t('areaCharge')} ${formatArea(billableArea)}` : '';
 }
 function formatSizeText(it){
   const w = it.width, h = it.height;
@@ -868,7 +881,7 @@ function calcLineTotal(it){
   const qty = parseFloat(it.qty) || 0;
   const price = parseFloat(it.price) || 0;
   if(it.useArea !== false){
-    const area = calcMeasuredArea(it);
+    const area = calcBillableArea(it);
     if(area > 0) return qty * area * price;
   }
   return qty * price;
@@ -920,6 +933,7 @@ function renderItemsForm(){
         </div>
         <div class="item-grid-size-total">
           <label>${t('thSizeTotal')}</label><input type="text" disabled data-area-idx="${idx}" value="${escapeHtml(formatCombinedSize(it))}">
+          <small class="area-charge" data-area-charge-idx="${idx}">${escapeHtml(areaChargeLabel(it))}</small>
         </div>
         <div class="use-area-row">
           <label><input type="checkbox" data-field="useArea" data-idx="${idx}" ${it.useArea !== false ? 'checked' : ''}> ${t('lblUseArea')}</label>
@@ -966,6 +980,7 @@ function updatePreview(){
   let subtotal = 0;
   items.forEach((it, idx) => {
     const lineTotal = calcLineTotal(it);
+    const displayedArea = it.useArea === false ? calcMeasuredArea(it) : calcBillableArea(it);
     subtotal += lineTotal;
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -973,7 +988,7 @@ function updatePreview(){
       <td>${escapeHtml(it.name) || '-'}</td>
       <td>${escapeHtml(it.workDetail||'') || '-'}</td>
       <td class="center">${escapeHtml(String(formatSizeText(it)))}</td>
-      <td class="center">${formatArea(calcMeasuredArea(it))}</td>
+      <td class="center">${formatArea(displayedArea)}</td>
       <td class="center">${escapeHtml(String(it.qty))}</td>
       <td class="num">${fmt(it.price)}</td>
       <td class="num">${fmt(lineTotal)}</td>
@@ -999,6 +1014,7 @@ function updateItemAmounts(idx){
   const it = items[idx];
   const card = itemCards.get(it);
   card.querySelector('[data-area-idx]').value = formatCombinedSize(it);
+  card.querySelector('[data-area-charge-idx]').textContent = areaChargeLabel(it);
   card.querySelector('[data-total-idx]').value = fmt(calcLineTotal(it));
 }
 
@@ -1240,6 +1256,7 @@ const translations = {
   lblDiscountPct: {lo:'ສ່ວນຫຼຸດ (%)', zh:'折扣 (%)'},
   lblCurrency: {lo:'ສະກຸນເງິນ', zh:'货币'},
   lblAreaUnit: {lo:'ຫົວໜ່ວຍພື້ນທີ່', zh:'面积单位'},
+  areaCharge: {lo:'ຄິດລາຄາ', zh:'计价面积'},
   lblAttachUpload: {lo:'ອັບໂຫລດຮູບ (ຈະສະແດງທາງລຸ່ມຂອງ "ລວມທັງໝົດ" ໃນເອກະສານ)', zh:'上传图片（将显示在"总计"下方）'},
   btnAddItem: {lo:'ເພີ່ມລາຍການ', zh:'添加项目'},
   btnRmImg: {lo:'ລຶບຮູບ', zh:'删除图片'},
