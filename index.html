@@ -635,14 +635,15 @@
     <details class="section">
       <summary data-i18n="secCompany">ຂໍ້ມູນບໍລິສັດ</summary>
       <div class="field"><label data-i18n="lblCompanyName">ຊື່ບໍລິສັດ / ຮ້ານ</label><input type="text" id="companyName" value="ຮ້ານພີມປ້າຍຊານນີ"></div>
-      <div class="field"><label data-i18n="lblCompanyMeta">ທີ່ຢູ່ / ເບີໂທ / ອີເມວ</label><textarea id="companyMeta">ບ້ານນາເລົາ,ເມືອງໄຊ,ແຂວງອຸດົມໄຊ
-ໂທ: 020 92828222 | SANLIAN@gmail.com</textarea></div>
+      <div class="field"><label data-i18n="lblCompanyMeta">ທີ່ຢູ່ / ເບີໂທ / ອີເມວ</label><textarea id="companyMeta">ບ້ານ ນາເລົາ, ເມືອງໄຊ, ແຂວອຸດົມໄຊ
+ໂທ:020 92828222| SANLIAN@gmail.com</textarea></div>
     </details>
 
     <details class="section" open>
       <summary data-i18n="secClient">ຂໍ້ມູນລູກຄ້າ</summary>
-      <div class="field"><label data-i18n="lblClientName">ຊື່ລູກຄ້າ / ບໍລິສັດລູກຄ້າ</label><input type="text" id="clientName" value="ຊື່ລູກຄ້າ ຫຼື ບໍລິສັດ"></div>
-      <div class="field"><label data-i18n="lblClientMeta">ທີ່ຢູ່ / ເບີໂທ</label><textarea id="clientMeta">ທີ່ຢູ່ ຫຼື ສະຖານທີ </textarea></div>
+      <div class="field"><label data-i18n="lblClientName">ຊື່ລູກຄ້າ / ບໍລິສັດລູກຄ້າ</label><input type="text" id="clientName" value="ປ້ອນຂໍ້ມູນລູກຄ້າ"></div>
+      <div class="field"><label data-i18n="lblClientMeta">ທີ່ຢູ່ / ເບີໂທ</label><textarea id="clientMeta">ທີຢູ່ ຫຼື ເບີໂທ:
+</textarea></div>
     </details>
 
     <details class="section" open>
@@ -838,11 +839,11 @@ function calcMeasuredArea(it){
   return toMeters(it.width, unit) * toMeters(it.height, unit);
 }
 function calcBillableArea(it){
+  if(it.useActualArea === true) return calcMeasuredArea(it);
   const unit = it.sizeUnit || 'm';
   const width = toMeters(it.width, unit);
   const height = toMeters(it.height, unit);
-  const measuredArea = width * height;
-  if(measuredArea === 0 || measuredArea >= 1) return measuredArea;
+  if(width === 0 || height === 0) return 0;
   return Math.max(1, width) * Math.max(1, height);
 }
 function formatArea(area){
@@ -938,6 +939,9 @@ function renderItemsForm(){
         <div class="use-area-row">
           <label><input type="checkbox" data-field="useArea" data-idx="${idx}" ${it.useArea !== false ? 'checked' : ''}> ${t('lblUseArea')}</label>
         </div>
+        <div class="use-area-row" data-actual-area-option ${it.useArea === false ? 'hidden' : ''}>
+          <label><input type="checkbox" data-field="useActualArea" data-idx="${idx}" ${it.useActualArea === true ? 'checked' : ''}> ${t('lblUseActualArea')}</label>
+        </div>
         <div class="item-grid-row2">
           <div><label>${t('lblQty')}</label><input type="text" inputmode="decimal" data-field="qty" aria-label="${t('lblQty')}" data-idx="${idx}" value="${escapeHtml(String(it.qty))}"></div>
           <div><label>${t('lblPrice')}</label><input type="text" inputmode="decimal" data-field="price" aria-label="${t('lblPrice')}" data-idx="${idx}" value="${escapeHtml(String(it.price))}"></div>
@@ -1015,6 +1019,7 @@ function updateItemAmounts(idx){
   const card = itemCards.get(it);
   card.querySelector('[data-area-idx]').value = formatCombinedSize(it);
   card.querySelector('[data-area-charge-idx]').textContent = areaChargeLabel(it);
+  card.querySelector('[data-actual-area-option]').hidden = it.useArea === false;
   card.querySelector('[data-total-idx]').value = fmt(calcLineTotal(it));
 }
 
@@ -1032,8 +1037,8 @@ document.getElementById('itemsList').addEventListener('input', (e) => {
     return;
   }
 
-  if(field === 'useArea'){
-    items[idx].useArea = e.target.checked;
+  if(field === 'useArea' || field === 'useActualArea'){
+    items[idx][field] = e.target.checked;
     updateItemAmounts(idx);
     updatePreview();
     return;
@@ -1257,6 +1262,7 @@ const translations = {
   lblCurrency: {lo:'ສະກຸນເງິນ', zh:'货币'},
   lblAreaUnit: {lo:'ຫົວໜ່ວຍພື້ນທີ່', zh:'面积单位'},
   areaCharge: {lo:'ຄິດລາຄາ', zh:'计价面积'},
+  lblUseActualArea: {lo:'ຄິດລາຄາຕາມພື້ນທີ່ຈິງ', zh:'按实际面积计价'},
   lblAttachUpload: {lo:'ອັບໂຫລດຮູບ (ຈະສະແດງທາງລຸ່ມຂອງ "ລວມທັງໝົດ" ໃນເອກະສານ)', zh:'上传图片（将显示在"总计"下方）'},
   btnAddItem: {lo:'ເພີ່ມລາຍການ', zh:'添加项目'},
   btnRmImg: {lo:'ລຶບຮູບ', zh:'删除图片'},
@@ -1459,7 +1465,11 @@ function editRecord(rec){
   document.getElementById('discountRate').value = rec.discountRate ?? (rec.subtotal ? (Number(rec.discount)/Number(rec.subtotal)*100).toFixed(2) : 0);
 
   items = Array.isArray(rec.items) && rec.items.length
-    ? rec.items.map(it => ({name:it.name||'', workDetail:it.workDetail||'', width:it.width||'', height:it.height||'', sizeUnit: it.sizeUnit||'m', qty:Number(it.qty)||0, price:Number(it.price)||0, useArea: it.useArea !== false}))
+    ? rec.items.map(it => ({
+      name:it.name||'', workDetail:it.workDetail||'', width:it.width||'', height:it.height||'',
+      sizeUnit:it.sizeUnit||'m', qty:Number(it.qty)||0, price:Number(it.price)||0,
+      useArea:it.useArea !== false, useActualArea:it.useActualArea === true
+    }))
     : [{name:'', workDetail:'', width:'', height:'', qty:1, price:0}];
 
   attachImages = Array.isArray(rec.attachImages) ? rec.attachImages.slice(0, MAX_ATTACH_IMAGES)
